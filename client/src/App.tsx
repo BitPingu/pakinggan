@@ -1,10 +1,19 @@
-import './App.css'
+import { useEffect, useState } from "react";
 
 function App() {
+  const [status, setStatus] = useState("Checking...");
+
+  useEffect(() => {
+    fetch("http://127.0.0.1:8000/api/health")
+      .then((response) => response.json())
+      .then((data) => setStatus(data.status))
+      .catch(() => setStatus("Backend unavailable"));
+  }, []);
+
   return (
     <div>
-      <h1>Hello, React!</h1>
-      <p>My first React application.</p>
+      <h1>Pakinggan</h1>
+      <p>Backend status: {status}</p>
     </div>
   )
 }
