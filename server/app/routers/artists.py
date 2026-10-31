@@ -70,3 +70,20 @@ def update_artist(
     # return the updated artist
     return db_artist
 
+
+# delete an artist
+@router.delete("/{artist_id}", status_code=204)
+def delete_artist(artist_id: int, db: Session = Depends(get_db)):
+    # retrieve the artist
+    db_artist = db.query(Artist).filter(Artist.id == artist_id).first()
+
+    # handle missing artists
+    if db_artist is None:
+        raise HTTPException(status_code=404, detail="Artist not found")
+
+    # mark the artist for deletion
+    db.delete(db_artist)
+
+    # save the changes
+    db.commit()
+
