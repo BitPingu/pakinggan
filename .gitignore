@@ -148,6 +148,12 @@ vite.config.ts.timestamp-*
 # Turbo Repo
 .turbo
 
+# Python
+.venv/
+__pycache__/
+.env
+.pytest_cache/
+
 # Misc
 *.DS_Store
 *.vscode
