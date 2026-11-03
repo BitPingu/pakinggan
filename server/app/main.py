@@ -4,6 +4,7 @@ from sqlalchemy import text
 
 from app.database import engine
 from app.routers.artists import router as artists_router
+from app.routers.albums import router as albums_router
 
 
 # init fastapi app
@@ -22,6 +23,7 @@ app.add_middleware(
 
 # register artists router
 app.include_router(artists_router)
+app.include_router(albums_router)
 
 
 # root endpoint
