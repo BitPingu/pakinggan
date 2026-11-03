@@ -1,4 +1,7 @@
+import logging
+
 from fastapi import APIRouter, Depends, HTTPException
+from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.orm import Session
 
 from app.database import get_db
@@ -7,6 +10,8 @@ from app.models.album import Album
 from app.schemas.artist import ArtistCreate, ArtistUpdate, ArtistResponse
 from app.schemas.album import AlbumResponse
 
+
+logger = logging.getLogger(__name__)
 
 # artist endpoints
 router = APIRouter(
@@ -30,7 +35,10 @@ def get_artist(artist_id: int, db: Session = Depends(get_db)):
 
     # handle missing artists
     if artist is None:
-        raise HTTPException(status_code=404, detail="Artist not found")
+        raise HTTPException(
+            status_code=404,
+            detail="Artist not found",
+        )
 
     # return the artist
     return artist
@@ -39,13 +47,22 @@ def get_artist(artist_id: int, db: Session = Depends(get_db)):
 # create an artist
 @router.post("/", response_model=ArtistResponse, status_code=201)
 def create_artist(artist: ArtistCreate, db: Session = Depends(get_db)):
-    db_artist = Artist(name=artist.name) # creates a new artist object
+    try:
+        db_artist = Artist(name=artist.name) # creates a new artist object
 
-    db.add(db_artist) # add it to the session
-    db.commit() # commit the transaction
-    db.refresh(db_artist) # refresh the object
+        db.add(db_artist) # add it to the session
+        db.commit() # commit the transaction
+        db.refresh(db_artist) # refresh the object
 
-    return db_artist # return in json
+        return db_artist # return in json
+
+    except SQLAlchemyError:
+        db.rollback() # revert the transaction
+        logger.exception("Database error while creating artist")
+        raise HTTPException(
+            status_code=500,
+            detail="An error occurred while creating the artist",
+        )
 
 
 # update an existing artist
@@ -55,39 +72,63 @@ def update_artist(
     artist: ArtistUpdate,
     db: Session = Depends(get_db),
 ):
-    # retrieve the artist
-    db_artist = db.query(Artist).filter(Artist.id == artist_id).first()
+    try:
+        # retrieve the artist
+        db_artist = db.query(Artist).filter(Artist.id == artist_id).first()
 
-    # handle missing artists
-    if db_artist is None:
-        raise HTTPException(status_code=404, detail="Artist not found")
+        # handle missing artists
+        if db_artist is None:
+            raise HTTPException(
+                status_code=404,
+                detail="Artist not found",
+            )
 
-    # update the field
-    db_artist.name = artist.name
+        # update the field
+        db_artist.name = artist.name
 
-    # save the changes
-    db.commit()
-    db.refresh(db_artist)
+        # save the changes
+        db.commit()
+        db.refresh(db_artist)
 
-    # return the updated artist
-    return db_artist
+        # return the updated artist
+        return db_artist
+
+    except SQLAlchemyError:
+        db.rollback() # revert the transaction
+        logger.exception("Database error while updating artist")
+        raise HTTPException(
+            status_code=500,
+            detail="An error occurred while updating the artist",
+        )
 
 
 # delete an artist
 @router.delete("/{artist_id}", status_code=204)
 def delete_artist(artist_id: int, db: Session = Depends(get_db)):
-    # retrieve the artist
-    db_artist = db.query(Artist).filter(Artist.id == artist_id).first()
+    try:
+        # retrieve the artist
+        db_artist = db.query(Artist).filter(Artist.id == artist_id).first()
 
-    # handle missing artists
-    if db_artist is None:
-        raise HTTPException(status_code=404, detail="Artist not found")
+        # handle missing artists
+        if db_artist is None:
+            raise HTTPException(
+                status_code=404,
+                detail="Artist not found",
+            )
 
-    # mark the artist for deletion
-    db.delete(db_artist)
+        # mark the artist for deletion
+        db.delete(db_artist)
 
-    # save the changes
-    db.commit()
+        # save the changes
+        db.commit()
+
+    except SQLAlchemyError:
+        db.rollback() # revert the transaction
+        logger.exception("Database error while deleting artist")
+        raise HTTPException(
+            status_code=500,
+            detail="An error occurred while deleting the artist",
+        )
 
 
 # retrieve an artist's albums
@@ -98,7 +139,10 @@ def get_artist_albums(artist_id: int, db: Session = Depends(get_db)):
 
     # handle missing artists
     if db_artist is None:
-        raise HTTPException(status_code=404, detail="Artist not found")
+        raise HTTPException(
+            status_code=404,
+            detail="Artist not found",
+        )
 
     # retrieve the artist's albums
     albums = db.query(Album).filter(Album.artist_id == artist_id).all()
