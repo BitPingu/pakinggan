@@ -4,7 +4,9 @@ from sqlalchemy.orm import Session
 from app.database import get_db
 from app.models.album import Album
 from app.models.artist import Artist
+from app.models.track import Track
 from app.schemas.album import AlbumCreate, AlbumUpdate, AlbumResponse
+from app.schemas.track import TrackResponse
 
 
 # album endpoints
@@ -107,4 +109,21 @@ def delete_album(album_id: int, db: Session = Depends(get_db)):
 
     # save the changes
     db.commit()
+
+
+# retrieve an album's tracks
+@router.get("/{album_id}/tracks", response_model=list[TrackResponse])
+def get_album_tracks(album_id: int, db: Session = Depends(get_db)):
+    # retrieve the album
+    db_album = db.query(Album).filter(Album.id == album_id).first()
+
+    # handle missing albums
+    if db_album is None:
+        raise HTTPException(status_code=404, detail="Album not found")
+
+    # retrieve the album's tracks
+    tracks = db.query(Track).filter(Track.album_id == album_id).all()
+
+    # return the tracks
+    return tracks
 
