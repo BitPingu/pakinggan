@@ -1,6 +1,10 @@
-from fastapi import FastAPI
+import logging
+
+from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import JSONResponse
 from sqlalchemy import text
+from sqlalchemy.exc import SQLAlchemyError
 
 from app.database import engine
 from app.routers.artists import router as artists_router
@@ -8,8 +12,28 @@ from app.routers.albums import router as albums_router
 from app.routers.tracks import router as tracks_router
 
 
+logger = logging.getLogger(__name__)
+
 # init fastapi app
 app = FastAPI()
+
+
+# handler for sqlalchemy database exceptions
+@app.exception_handler(SQLAlchemyError)
+async def sqlalchemy_exception_handler(request: Request, exc: SQLAlchemyError):
+    # record request path and exception traceback
+    logger.error(
+        "Database error while processing %s %s",
+        request.method,
+        request.url.path,
+        exc_info=(type(exc), exc, exc.__traceback__),
+    )
+
+    # return generic http 500 response
+    return JSONResponse(
+        status_code=500,
+        content={"detail": "A database error occurred"},
+    )
 
 
 # middleware that processes requests and responses
@@ -20,7 +44,6 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
-
 
 # register routers
 app.include_router(artists_router)

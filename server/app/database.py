@@ -1,7 +1,7 @@
 from collections.abc import Generator
 
 from sqlalchemy import create_engine
-from sqlalchemy.orm import sessionmaker, DeclarativeBase
+from sqlalchemy.orm import DeclarativeBase, Session, sessionmaker
 
 from app.core.config import settings
 
@@ -25,8 +25,12 @@ SessionLocal = sessionmaker(
 # provides a session to an api endpoint and closes it after
 def get_db() -> Generator:
     db = SessionLocal() # create a new database session
+
     try:
         yield db # provide session to endpoint
+    except Exception:
+        db.rollback() # revert transaction
+        raise
     finally:
         db.close() # ensure session is closed
 
