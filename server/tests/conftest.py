@@ -84,3 +84,24 @@ def client(db_session):
     finally:
         app.dependency_overrides.clear() # remove dependency overrides
 
+
+@pytest.fixture
+def artist(client):
+    response = client.post(
+        "/api/artists/",
+        json={"name": "Radiohead"},
+    )
+    return response.json()
+
+
+@pytest.fixture
+def album(client, artist):
+    response = client.post(
+        "/api/albums/",
+        json={
+            "title": "OK Computer",
+            "artist_id": artist["id"],
+        },
+    )
+    return response.json()
+
