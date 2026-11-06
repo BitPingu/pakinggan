@@ -174,18 +174,70 @@ def test_delete_artist_with_albums(client):
     # attempt to delete the artist
     response = client.delete(f"/api/artists/{artist_id}")
 
-    print("Delete status:", response.status_code)
-    print("Delete response:", response.text)
-
     assert response.status_code == 500
     assert response.json() == {"detail": "A database error occurred"}
 
     # verify artist still exists
     get_response = client.get(f"/api/artists/{artist_id}")
 
-    print("Get status:", get_response.status_code)
-    print("Get response:", get_response.text)
-
     assert get_response.status_code == 200
     assert get_response.json()["name"] == "Radiohead"
+
+
+# retrieving all albums belonging to an artist
+def test_get_artist_albums(client):
+    artist_response = client.post(
+        "/api/artists/",
+        json={"name": "Radiohead"},
+    )
+
+    artist_id = artist_response.json()["id"]
+
+    # create albums associated with the artist
+    client.post(
+        "/api/albums/",
+        json={
+            "title": "OK Computer",
+            "artist_id": artist_id,
+        },
+    )
+    client.post(
+        "/api/albums/",
+        json={
+            "title": "In Rainbows",
+            "artist_id": artist_id,
+        },
+    )
+
+    # verify correct albums
+    response = client.get(f"/api/artists/{artist_id}/albums")
+
+    assert response.status_code == 200
+    assert len(response.json()) == 2
+    assert response.json()[0]["title"] == "OK Computer"
+    assert response.json()[1]["title"] == "In Rainbows"
+
+
+# existing artist with no albums
+def test_get_artist_albums_empty(client):
+    artist_response = client.post(
+        "/api/artists/",
+        json={"name": "Radiohead"},
+    )
+
+    artist_id = artist_response.json()["id"]
+
+    # verify correct albums
+    response = client.get(f"/api/artists/{artist_id}/albums")
+
+    assert response.status_code == 200
+    assert response.json() == []
+
+
+# album but artist doesn't exist
+def test_get_artist_albums_artist_not_found(client):
+    response = client.get("/api/artists/9999/albums")
+
+    assert response.status_code == 404
+    assert response.json() == {"detail": "Artist not found"}
 
