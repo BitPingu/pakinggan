@@ -86,6 +86,20 @@ def client(db_session):
         app.dependency_overrides.clear()  # remove dependency overrides
 
 
+# creates a test user
+@pytest.fixture
+def user(client):
+    response = client.post(
+        "/api/users/",
+        json={
+            "username": "gavin",
+            "email": "gavin@example.com",
+            "password": "securepassword123",
+        },
+    )
+    return response.json()
+
+
 # creates a test artist
 @pytest.fixture
 def artist(client):
