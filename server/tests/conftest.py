@@ -69,7 +69,11 @@ def db_session(test_engine):
 @pytest.fixture
 def client(db_session):
     def override_get_db():
-        yield db_session # provide the test session
+        try:
+            yield db_session # provide the test session
+        except Exception:
+            db_session.rollback() # revert transaction for the test
+            raise
 
     # override get_db with override_get_db
     app.dependency_overrides[get_db] = override_get_db
