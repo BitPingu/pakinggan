@@ -85,6 +85,7 @@ def client(db_session):
         app.dependency_overrides.clear() # remove dependency overrides
 
 
+# creates a test artist
 @pytest.fixture
 def artist(client):
     response = client.post(
@@ -94,6 +95,7 @@ def artist(client):
     return response.json()
 
 
+# creates a test album associated with the artist
 @pytest.fixture
 def album(client, artist):
     response = client.post(

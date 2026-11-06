@@ -37,43 +37,24 @@ def test_create_artist_whitespace_name(client):
     assert response.status_code == 422
 
 
-# retrieve all artists
-# creates two artists and verifies that both are returned
-def test_get_artists(client):
-    client.post(
-        "/api/artists/",
-        json={"name": "Radiohead"},
-    )
-    client.post(
-        "/api/artists/",
-        json={"name": "Pink Floyd"},
-    )
-
+# retrieving all artists
+def test_get_artists(client, artist):
     # verify correct artists
     response = client.get("/api/artists/")
 
     assert response.status_code == 200
-    assert len(response.json()) == 2
-    assert response.json()[0]["name"] == "Radiohead"
-    assert response.json()[1]["name"] == "Pink Floyd"
+    assert len(response.json()) == 1
+    assert response.json()[0]["name"] == artist["name"]
 
 
-# retrieve existing artist
-# creates an artist, retrieves its generated ID, and requests that specific artist
-def test_get_artist(client):
-    create_response = client.post(
-        "/api/artists/",
-        json={"name": "Radiohead"},
-    )
-
-    artist_id = create_response.json()["id"]
-
+# retrieving an existing artist
+def test_get_artist(client, artist):
     # verify correct artist
-    response = client.get(f"/api/artists/{artist_id}")
+    response = client.get(f"/api/artists/{artist['id']}")
 
     assert response.status_code == 200
-    assert response.json()["id"] == artist_id
-    assert response.json()["name"] == "Radiohead"
+    assert response.json()["id"] == artist["id"]
+    assert response.json()["name"] == artist["name"]
 
 
 # artist doesn't exist
@@ -86,28 +67,20 @@ def test_get_artist_not_found(client):
     assert response.json() == {"detail": "Artist not found"}
 
 
-# update existing artist
-# creates an artist, updates its name, and verifies the returned artist
-def test_update_artist(client):
-    create_response = client.post(
-        "/api/artists/",
-        json={"name": "Radiohead"},
-    )
-
-    artist_id = create_response.json()["id"]
-
+# updating an artist
+def test_update_artist(client, artist):
     # attempt to update the artist
     response = client.put(
-        f"/api/artists/{artist_id}",
+        f"/api/artists/{artist['id']}",
         json={"name": "The Smile"},
     )
 
     assert response.status_code == 200
-    assert response.json()["id"] == artist_id
+    assert response.json()["id"] == artist["id"]
     assert response.json()["name"] == "The Smile"
 
 
-# artist doesn't exist
+# updating an artist that doesn't exist
 # attempts to update an artist that doesn't exist and expects a 404
 def test_update_artist_not_found(client):
     # attempt to update the artist
@@ -120,28 +93,21 @@ def test_update_artist_not_found(client):
     assert response.json() == {"detail": "Artist not found"}
 
 
-# delete existing artist
+# deleting an artist
 # verify that an artist can be successfully deleted
-def test_delete_artist(client):
-    create_response = client.post(
-        "/api/artists/",
-        json={"name": "Radiohead"},
-    )
-
-    artist_id = create_response.json()["id"]
-
+def test_delete_artist(client, artist):
     # attempt to delete the artist
-    response = client.delete(f"/api/artists/{artist_id}")
+    response = client.delete(f"/api/artists/{artist['id']}")
 
     assert response.status_code == 204 # check for no content
 
     # verify deletion
-    get_response = client.get(f"/api/artists/{artist_id}")
+    get_response = client.get(f"/api/artists/{artist['id']}")
 
     assert get_response.status_code == 404 # check for not found
 
 
-# artist doesn't exist
+# deleting an artist that doesn't exist
 # verify that deleting an artist that doesn't exist returns the correct error
 def test_delete_artist_not_found(client):
     # attempt to delete the artist
@@ -151,25 +117,11 @@ def test_delete_artist_not_found(client):
     assert response.json() == {"detail": "Artist not found"}
 
 
-# artist has albums
+# deleting an artist that has albums
 # verify that deleting an artist with associated albums triggers the 
 # expected database error and rolls back the transaction
-def test_delete_artist_with_albums(client):
-    artist_response = client.post(
-        "/api/artists/",
-        json={"name": "Radiohead"},
-    )
-
-    artist_id = artist_response.json()["id"]
-
-    # creates an album associated with the artist
-    client.post(
-        "/api/albums/",
-        json={
-            "title": "OK Computer",
-            "artist_id": artist_id,
-        },
-    )
+def test_delete_artist_with_albums(client, album):
+    artist_id = album["artist_id"]
 
     # attempt to delete the artist
     response = client.delete(f"/api/artists/{artist_id}")
@@ -185,32 +137,25 @@ def test_delete_artist_with_albums(client):
 
 
 # retrieving all albums belonging to an artist
-def test_get_artist_albums(client):
-    artist_response = client.post(
-        "/api/artists/",
-        json={"name": "Radiohead"},
-    )
-
-    artist_id = artist_response.json()["id"]
-
+def test_get_artist_albums(client, artist):
     # create albums associated with the artist
     client.post(
         "/api/albums/",
         json={
             "title": "OK Computer",
-            "artist_id": artist_id,
+            "artist_id": artist["id"],
         },
     )
     client.post(
         "/api/albums/",
         json={
             "title": "In Rainbows",
-            "artist_id": artist_id,
+            "artist_id": artist["id"],
         },
     )
 
     # verify correct albums
-    response = client.get(f"/api/artists/{artist_id}/albums")
+    response = client.get(f"/api/artists/{artist['id']}/albums")
 
     assert response.status_code == 200
     assert len(response.json()) == 2
@@ -219,16 +164,9 @@ def test_get_artist_albums(client):
 
 
 # existing artist with no albums
-def test_get_artist_albums_empty(client):
-    artist_response = client.post(
-        "/api/artists/",
-        json={"name": "Radiohead"},
-    )
-
-    artist_id = artist_response.json()["id"]
-
+def test_get_artist_albums_empty(client, artist):
     # verify correct albums
-    response = client.get(f"/api/artists/{artist_id}/albums")
+    response = client.get(f"/api/artists/{artist['id']}/albums")
 
     assert response.status_code == 200
     assert response.json() == []

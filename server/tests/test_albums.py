@@ -1,42 +1,26 @@
 # valid album
-def test_create_album(client):
-    artist_response = client.post(
-        "/api/artists/",
-        json={"name": "Radiohead"},
-    )
-
-    artist_id = artist_response.json()["id"]
-
-    # creates an album associated with the artist
+def test_create_album(client, artist):
     response = client.post(
         "/api/albums/",
         json={
             "title": "OK Computer",
-            "artist_id": artist_id,
+            "artist_id": artist["id"],
         },
     )
 
     assert response.status_code == 201
     assert response.json()["title"] == "OK Computer"
-    assert response.json()["artist_id"] == artist_id
+    assert response.json()["artist_id"] == artist["id"]
     assert "id" in response.json()
 
 
 # empty name
-def test_create_album_empty_title(client):
-    artist_response = client.post(
-        "/api/artists/",
-        json={"name": "Radiohead"},
-    )
-
-    artist_id = artist_response.json()["id"]
-
-    # creates an album associated with the artist
+def test_create_album_empty_title(client, artist):
     response = client.post(
         "/api/albums/",
         json={
             "title": "",
-            "artist_id": artist_id,
+            "artist_id": artist["id"],
         },
     )
 
@@ -45,20 +29,12 @@ def test_create_album_empty_title(client):
 
 
 # whitespace name
-def test_create_album_whitespace_title(client):
-    artist_response = client.post(
-        "/api/artists/",
-        json={"name": "Radiohead"},
-    )
-
-    artist_id = artist_response.json()["id"]
-
-    # creates an album associated with the artist
+def test_create_album_whitespace_title(client, artist):
     response = client.post(
         "/api/albums/",
         json={
             "title": "   ",
-            "artist_id": artist_id,
+            "artist_id": artist["id"],
         },
     )
 
@@ -95,28 +71,15 @@ def test_create_album_artist_not_found(client):
 
 
 # retrieving all albums
-def test_get_albums(client):
-    artist_response = client.post(
-        "/api/artists/",
-        json={"name": "Radiohead"},
-    )
-
-    artist_id = artist_response.json()["id"]
-
+def test_get_albums(client, artist):
     # create albums associated with the artist
     client.post(
         "/api/albums/",
-        json={
-            "title": "OK Computer",
-            "artist_id": artist_id,
-        },
+        json={"title": "OK Computer", "artist_id": artist["id"]},
     )
     client.post(
         "/api/albums/",
-        json={
-            "title": "In Rainbows",
-            "artist_id": artist_id,
-        },
+        json={"title": "The Bends", "artist_id": artist["id"]},
     )
 
     # verify correct albums
@@ -124,37 +87,21 @@ def test_get_albums(client):
 
     assert response.status_code == 200
     assert len(response.json()) == 2
-    assert response.json()[0]["title"] == "OK Computer"
-    assert response.json()[1]["title"] == "In Rainbows"
+    assert {album["title"] for album in response.json()} == {
+        "OK Computer",
+        "The Bends",
+    }
 
 
 # retrieving a single album
-def test_get_album(client):
-    artist_response = client.post(
-        "/api/artists/",
-        json={"name": "Radiohead"},
-    )
-
-    artist_id = artist_response.json()["id"]
-
-    # creates an album associated with the artist
-    create_response = client.post(
-        "/api/albums/",
-        json={
-            "title": "OK Computer",
-            "artist_id": artist_id,
-        },
-    )
-
-    album_id = create_response.json()["id"]
-
+def test_get_album(client, album):
     # verify correct album
-    response = client.get(f"/api/albums/{album_id}")
+    response = client.get(f"/api/albums/{album['id']}")
 
     assert response.status_code == 200
-    assert response.json()["id"] == album_id
-    assert response.json()["title"] == "OK Computer"
-    assert response.json()["artist_id"] == artist_id
+    assert response.json()["id"] == album["id"]
+    assert response.json()["title"] == album["title"]
+    assert response.json()["artist_id"] == album["artist_id"]
 
 
 # album doesn't exist
@@ -167,55 +114,30 @@ def test_get_album_not_found(client):
 
 
 # updating an album
-def test_update_album(client):
-    artist_response = client.post(
-        "/api/artists/",
-        json={"name": "Radiohead"},
-    )
-
-    artist_id = artist_response.json()["id"]
-
-    # creates an album associated with the artist
-    create_response = client.post(
-        "/api/albums/",
-        json={
-            "title": "OK Computer",
-            "artist_id": artist_id,
-        },
-    )
-
-    album_id = create_response.json()["id"]
-
+def test_update_album(client, album):
     # attempt to update the album
     response = client.put(
-        f"/api/albums/{album_id}",
+        f"/api/albums/{album['id']}",
         json={
-            "title": "OK Computer (Remastered)",
-            "artist_id": artist_id,
+            "title": "The Bends",
+            "artist_id": album["artist_id"],
         },
     )
 
     assert response.status_code == 200
-    assert response.json()["id"] == album_id
-    assert response.json()["title"] == "OK Computer (Remastered)"
-    assert response.json()["artist_id"] == artist_id
+    assert response.json()["id"] == album["id"]
+    assert response.json()["title"] == "The Bends"
+    assert response.json()["artist_id"] == album["artist_id"]
 
 
 # updating an album that doesn't exist
-def test_update_album_not_found(client):
-    artist_response = client.post(
-        "/api/artists/",
-        json={"name": "Radiohead"},
-    )
-
-    artist_id = artist_response.json()["id"]
-
+def test_update_album_not_found(client, artist):
     # attempt to update the album
     response = client.put(
         "/api/albums/9999",
         json={
-            "title": "OK Computer",
-            "artist_id": artist_id,
+            "title": "The Bends",
+            "artist_id": artist["id"],
         },
     )
 
@@ -224,30 +146,12 @@ def test_update_album_not_found(client):
 
 
 # updating an album with a nonexistent artist
-def test_update_album_artist_not_found(client):
-    artist_response = client.post(
-        "/api/artists/",
-        json={"name": "Radiohead"},
-    )
-
-    artist_id = artist_response.json()["id"]
-
-    # creates an album associated with the artist
-    create_response = client.post(
-        "/api/albums/",
-        json={
-            "title": "OK Computer",
-            "artist_id": artist_id,
-        },
-    )
-
-    album_id = create_response.json()["id"]
-
+def test_update_album_artist_not_found(client, album):
     # attempt to update the album
     response = client.put(
-        f"/api/albums/{album_id}",
+        f"/api/albums/{album['id']}",
         json={
-            "title": "OK Computer (Remastered)",
+            "title": "The Bends",
             "artist_id": 9999,
         },
     )
@@ -257,32 +161,14 @@ def test_update_album_artist_not_found(client):
 
 
 # deleting an album
-def test_delete_album(client):
-    artist_response = client.post(
-        "/api/artists/",
-        json={"name": "Radiohead"},
-    )
-
-    artist_id = artist_response.json()["id"]
-
-    # creates an album associated with the artist
-    create_response = client.post(
-        "/api/albums/",
-        json={
-            "title": "OK Computer",
-            "artist_id": artist_id,
-        },
-    )
-
-    album_id = create_response.json()["id"]
-
+def test_delete_album(client, album):
     # attempt to delete the album
-    response = client.delete(f"/api/albums/{album_id}")
+    response = client.delete(f"/api/albums/{album['id']}")
 
     assert response.status_code == 204 # check for no content
 
     # verify deletion
-    get_response = client.get(f"/api/albums/{album_id}")
+    get_response = client.get(f"/api/albums/{album['id']}")
 
     assert get_response.status_code == 404 # check for not found
 
@@ -297,75 +183,39 @@ def test_delete_album_not_found(client):
 
 
 # deleting an album that has tracks
-def test_delete_album_with_tracks(client):
-    artist_response = client.post(
-        "/api/artists/",
-        json={"name": "Radiohead"},
-    )
-
-    artist_id = artist_response.json()["id"]
-
-    # creates an album associated with the artist
-    album_response = client.post(
-        "/api/albums/",
-        json={
-            "title": "OK Computer",
-            "artist_id": artist_id,
-        },
-    )
-
-    album_id = album_response.json()["id"]
-
+def test_delete_album_with_tracks(client, album):
     # creates a track associated with the album
     client.post(
         "/api/tracks/",
         json={
             "title": "Paranoid Android",
             "duration": 383,
-            "album_id": album_id,
+            "album_id": album["id"],
         },
     )
 
     # attempt to delete the album
-    response = client.delete(f"/api/albums/{album_id}")
+    response = client.delete(f"/api/albums/{album['id']}")
 
     assert response.status_code == 500
     assert response.json() == {"detail": "A database error occurred"}
 
     # verify album still exists
-    get_response = client.get(f"/api/albums/{album_id}")
+    get_response = client.get(f"/api/albums/{album['id']}")
 
     assert get_response.status_code == 200
     assert get_response.json()["title"] == "OK Computer"
 
 
 # retrieving tracks belonging to an album
-def test_get_album_tracks(client):
-    artist_response = client.post(
-        "/api/artists/",
-        json={"name": "Radiohead"},
-    )
-
-    artist_id = artist_response.json()["id"]
-
-    # creates an album associated with the artist
-    album_response = client.post(
-        "/api/albums/",
-        json={
-            "title": "OK Computer",
-            "artist_id": artist_id,
-        },
-    )
-
-    album_id = album_response.json()["id"]
-
+def test_get_album_tracks(client, album):
     # create tracks associated with the album
     client.post(
         "/api/tracks/",
         json={
             "title": "Paranoid Android",
             "duration": 383,
-            "album_id": album_id,
+            "album_id": album["id"],
         },
     )
     client.post(
@@ -373,41 +223,25 @@ def test_get_album_tracks(client):
         json={
             "title": "Karma Police",
             "duration": 261,
-            "album_id": album_id,
+            "album_id": album["id"],
         },
     )
 
     # verify correct tracks
-    response = client.get(f"/api/albums/{album_id}/tracks")
+    response = client.get(f"/api/albums/{album['id']}/tracks")
 
     assert response.status_code == 200
     assert len(response.json()) == 2
-    assert response.json()[0]["title"] == "Paranoid Android"
-    assert response.json()[1]["title"] == "Karma Police"
+    assert {track["title"] for track in response.json()} == {
+        "Paranoid Android",
+        "Karma Police",
+    }
 
 
 # existing album with no tracks
-def test_get_album_tracks_empty(client):
-    artist_response = client.post(
-        "/api/artists/",
-        json={"name": "Radiohead"},
-    )
-
-    artist_id = artist_response.json()["id"]
-
-    # creates an album associated with the artist
-    album_response = client.post(
-        "/api/albums/",
-        json={
-            "title": "OK Computer",
-            "artist_id": artist_id,
-        },
-    )
-
-    album_id = album_response.json()["id"]
-
+def test_get_album_tracks_empty(client, album):
     # verify correct tracks
-    response = client.get(f"/api/albums/{album_id}/tracks")
+    response = client.get(f"/api/albums/{album['id']}/tracks")
 
     assert response.status_code == 200
     assert response.json() == []
