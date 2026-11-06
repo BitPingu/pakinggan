@@ -1,7 +1,13 @@
+from typing import TYPE_CHECKING
+
 from sqlalchemy import ForeignKey, String
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.database import Base
+
+if TYPE_CHECKING:
+    from app.models.artist import Artist
+    from app.models.track import Track
 
 
 class Album(Base):
@@ -14,4 +20,3 @@ class Album(Base):
 
     artist: Mapped["Artist"] = relationship(back_populates="albums")
     tracks: Mapped[list["Track"]] = relationship(back_populates="album")
-

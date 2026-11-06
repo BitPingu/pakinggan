@@ -8,7 +8,7 @@ class ArtistCreate(BaseModel):
     @field_validator("name")
     @classmethod
     def validate_name(cls, value: str) -> str:
-        value = value.strip() # remove leading and trailing whitespace
+        value = value.strip()  # remove leading and trailing whitespace
 
         if not value:
             raise ValueError("Artist name cannot be empty")
@@ -23,7 +23,7 @@ class ArtistUpdate(BaseModel):
     @field_validator("name")
     @classmethod
     def validate_name(cls, value: str) -> str:
-        value = value.strip() # remove leading and trailing whitespace
+        value = value.strip()  # remove leading and trailing whitespace
 
         if not value:
             raise ValueError("Artist name cannot be empty")
@@ -38,4 +38,3 @@ class ArtistResponse(BaseModel):
 
     # read from object attributes
     model_config = ConfigDict(from_attributes=True)
-

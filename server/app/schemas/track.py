@@ -5,12 +5,12 @@ from pydantic import BaseModel, ConfigDict, Field, field_validator
 class TrackCreate(BaseModel):
     title: str = Field(min_length=1, max_length=255)
     duration: int | None = Field(default=None, ge=0)
-    album_id: int = Field(gt=0) # foreign key
+    album_id: int = Field(gt=0)  # foreign key
 
     @field_validator("title")
     @classmethod
     def validate_title(cls, value: str) -> str:
-        value = value.strip() # remove leading and trailing whitespace
+        value = value.strip()  # remove leading and trailing whitespace
 
         if not value:
             raise ValueError("Track title cannot be empty")
@@ -27,7 +27,7 @@ class TrackUpdate(BaseModel):
     @field_validator("title")
     @classmethod
     def validate_title(cls, value: str) -> str:
-        value = value.strip() # remove leading and trailing whitespace
+        value = value.strip()  # remove leading and trailing whitespace
 
         if not value:
             raise ValueError("Track title cannot be empty")
@@ -44,4 +44,3 @@ class TrackResponse(BaseModel):
 
     # read from object attributes
     model_config = ConfigDict(from_attributes=True)
-

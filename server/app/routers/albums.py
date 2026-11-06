@@ -5,9 +5,8 @@ from app.database import get_db
 from app.models.album import Album
 from app.models.artist import Artist
 from app.models.track import Track
-from app.schemas.album import AlbumCreate, AlbumUpdate, AlbumResponse
+from app.schemas.album import AlbumCreate, AlbumResponse, AlbumUpdate
 from app.schemas.track import TrackResponse
-
 
 # album endpoints
 router = APIRouter(
@@ -59,9 +58,9 @@ def create_album(album: AlbumCreate, db: Session = Depends(get_db)):
         artist_id=album.artist_id,
     )
 
-    db.add(db_album) # add it to the session
-    db.commit() # commit the transaction
-    db.refresh(db_album) # refresh the object
+    db.add(db_album)  # add it to the session
+    db.commit()  # commit the transaction
+    db.refresh(db_album)  # refresh the object
 
     # return in json
     return db_album
@@ -144,4 +143,3 @@ def get_album_tracks(album_id: int, db: Session = Depends(get_db)):
 
     # return the tracks
     return tracks
-

@@ -2,10 +2,9 @@ from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 
 from app.database import get_db
-from app.models.track import Track
 from app.models.album import Album
-from app.schemas.track import TrackCreate, TrackUpdate, TrackResponse
-
+from app.models.track import Track
+from app.schemas.track import TrackCreate, TrackResponse, TrackUpdate
 
 # track endpoints
 router = APIRouter(
@@ -58,9 +57,9 @@ def create_track(track: TrackCreate, db: Session = Depends(get_db)):
         album_id=track.album_id,
     )
 
-    db.add(db_track) # add it to the session
-    db.commit() # commit the transaction
-    db.refresh(db_track) # refresh the object
+    db.add(db_track)  # add it to the session
+    db.commit()  # commit the transaction
+    db.refresh(db_track)  # refresh the object
 
     # return in json
     return db_track
@@ -124,4 +123,3 @@ def delete_track(track_id: int, db: Session = Depends(get_db)):
 
     # save the changes
     db.commit()
-

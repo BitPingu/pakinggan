@@ -32,36 +32,37 @@ def test_engine():
 
     # Recreate the schema in the dedicated test database.
     # each new pytest run starts with an empty set of tables
-    Base.metadata.drop_all(bind=engine) # remove tables
-    Base.metadata.create_all(bind=engine) # create tables
+    Base.metadata.drop_all(bind=engine)  # remove tables
+    Base.metadata.create_all(bind=engine)  # create tables
 
     # setup then teardown
     yield engine
 
     # Clean up after the test session.
-    Base.metadata.drop_all(bind=engine) # remove test tables
-    engine.dispose() # dispose resources
+    Base.metadata.drop_all(bind=engine)  # remove test tables
+    engine.dispose()  # dispose resources
 
 
 # provide a db session to individual tests
 # Creates a new transaction for each test
 @pytest.fixture
 def db_session(test_engine):
-    connection = test_engine.connect() # open connection to postgresql
-    transaction = connection.begin() # begin db transaction
+    connection = test_engine.connect()  # open connection to postgresql
+    transaction = connection.begin()  # begin db transaction
 
     # create sqlalchemy session
     session = Session(
         bind=connection,
-        join_transaction_mode="create_savepoint", # use a savepoint within existing transaction
+        # Use a savepoint within the existing transaction.
+        join_transaction_mode="create_savepoint",
     )
 
     try:
-        yield session # receive the session
+        yield session  # receive the session
     finally:
-        session.close() # close the sqlalchemy session
-        transaction.rollback() # undo changes in outer transaction
-        connection.close() # release the db connection
+        session.close()  # close the sqlalchemy session
+        transaction.rollback()  # undo changes in outer transaction
+        connection.close()  # release the db connection
 
 
 # provide a fastapi test client
@@ -70,9 +71,9 @@ def db_session(test_engine):
 def client(db_session):
     def override_get_db():
         try:
-            yield db_session # provide the test session
+            yield db_session  # provide the test session
         except Exception:
-            db_session.rollback() # revert transaction for the test
+            db_session.rollback()  # revert transaction for the test
             raise
 
     # override get_db with override_get_db
@@ -80,9 +81,9 @@ def client(db_session):
 
     try:
         with TestClient(app) as test_client:
-            yield test_client # create a client that can send requests to app
+            yield test_client  # create a client that can send requests to app
     finally:
-        app.dependency_overrides.clear() # remove dependency overrides
+        app.dependency_overrides.clear()  # remove dependency overrides
 
 
 # creates a test artist
@@ -106,4 +107,3 @@ def album(client, artist):
         },
     )
     return response.json()
-

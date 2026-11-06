@@ -7,10 +7,9 @@ from sqlalchemy import text
 from sqlalchemy.exc import SQLAlchemyError
 
 from app.database import engine
-from app.routers.artists import router as artists_router
 from app.routers.albums import router as albums_router
+from app.routers.artists import router as artists_router
 from app.routers.tracks import router as tracks_router
-
 
 logger = logging.getLogger(__name__)
 
@@ -70,4 +69,3 @@ def database_health_check():
         connection.execute(text("SELECT 1"))
 
     return {"database": "connected"}
-

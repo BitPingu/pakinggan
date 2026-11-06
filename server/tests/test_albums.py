@@ -165,12 +165,12 @@ def test_delete_album(client, album):
     # attempt to delete the album
     response = client.delete(f"/api/albums/{album['id']}")
 
-    assert response.status_code == 204 # check for no content
+    assert response.status_code == 204  # check for no content
 
     # verify deletion
     get_response = client.get(f"/api/albums/{album['id']}")
 
-    assert get_response.status_code == 404 # check for not found
+    assert get_response.status_code == 404  # check for not found
 
 
 # deleting an album that doesn't exist
@@ -253,4 +253,3 @@ def test_get_album_tracks_album_not_found(client):
 
     assert response.status_code == 404
     assert response.json() == {"detail": "Album not found"}
-

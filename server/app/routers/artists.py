@@ -2,11 +2,10 @@ from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 
 from app.database import get_db
-from app.models.artist import Artist
 from app.models.album import Album
-from app.schemas.artist import ArtistCreate, ArtistUpdate, ArtistResponse
+from app.models.artist import Artist
 from app.schemas.album import AlbumResponse
-
+from app.schemas.artist import ArtistCreate, ArtistResponse, ArtistUpdate
 
 # artist endpoints
 router = APIRouter(
@@ -42,13 +41,13 @@ def get_artist(artist_id: int, db: Session = Depends(get_db)):
 # create an artist
 @router.post("/", response_model=ArtistResponse, status_code=201)
 def create_artist(artist: ArtistCreate, db: Session = Depends(get_db)):
-    db_artist = Artist(name=artist.name) # creates a new artist object
+    db_artist = Artist(name=artist.name)  # creates a new artist object
 
-    db.add(db_artist) # add it to the session
-    db.commit() # commit the transaction
-    db.refresh(db_artist) # refresh the object
+    db.add(db_artist)  # add it to the session
+    db.commit()  # commit the transaction
+    db.refresh(db_artist)  # refresh the object
 
-    return db_artist # return in json
+    return db_artist  # return in json
 
 
 # update an existing artist
@@ -117,4 +116,3 @@ def get_artist_albums(artist_id: int, db: Session = Depends(get_db)):
 
     # return the albums
     return albums
-

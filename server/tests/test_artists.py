@@ -99,12 +99,12 @@ def test_delete_artist(client, artist):
     # attempt to delete the artist
     response = client.delete(f"/api/artists/{artist['id']}")
 
-    assert response.status_code == 204 # check for no content
+    assert response.status_code == 204  # check for no content
 
     # verify deletion
     get_response = client.get(f"/api/artists/{artist['id']}")
 
-    assert get_response.status_code == 404 # check for not found
+    assert get_response.status_code == 404  # check for not found
 
 
 # deleting an artist that doesn't exist
@@ -118,7 +118,7 @@ def test_delete_artist_not_found(client):
 
 
 # deleting an artist that has albums
-# verify that deleting an artist with associated albums triggers the 
+# verify that deleting an artist with associated albums triggers the
 # expected database error and rolls back the transaction
 def test_delete_artist_with_albums(client, album):
     artist_id = album["artist_id"]
@@ -178,4 +178,3 @@ def test_get_artist_albums_artist_not_found(client):
 
     assert response.status_code == 404
     assert response.json() == {"detail": "Artist not found"}
-

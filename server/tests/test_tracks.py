@@ -355,4 +355,3 @@ def test_delete_track_not_found(client):
 
     assert response.status_code == 404
     assert response.json() == {"detail": "Track not found"}
-
