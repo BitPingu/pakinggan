@@ -1,0 +1,133 @@
+# Name displayed in the GitHub Actions tab.
+name: CI
+
+# Run the workflow whenever code is pushed or a pull request is opened.
+on:
+  push:
+  pull_request:
+
+# Grant the workflow read-only access to repository contents.
+permissions:
+  contents: read
+
+# Define the jobs that make up the CI pipeline.
+# Backend and frontend jobs run independently and can execute in parallel.
+jobs:
+
+  # --------------------------------------------------
+  # Backend CI: FastAPI, PostgreSQL, Ruff, and pytest
+  # --------------------------------------------------
+  backend:
+    name: Backend Checks
+
+    # Run the job on a fresh Ubuntu virtual machine.
+    runs-on: ubuntu-latest
+
+    # Start a temporary PostgreSQL service for backend tests.
+    services:
+      postgres:
+        image: postgres:18
+
+        # Configure the PostgreSQL database and credentials.
+        env:
+          POSTGRES_USER: pakinggan
+          POSTGRES_PASSWORD: development
+          POSTGRES_DB: pakinggan
+
+        # Expose PostgreSQL on the runner's localhost.
+        ports:
+          - 5432:5432
+
+        # Wait until PostgreSQL is ready before running the job.
+        options: >-
+          --health-cmd "pg_isready -U pakinggan -d pakinggan"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+    # Provide database connection strings to backend commands.
+    env:
+      DATABASE_URL: postgresql+psycopg://pakinggan:development@localhost:5432/pakinggan
+      TEST_DATABASE_URL: postgresql+psycopg://pakinggan:development@localhost:5432/pakinggan_test
+
+    steps:
+      # Download the repository contents.
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      # Install Python for the backend environment.
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      # Install uv for Python dependency management.
+      - name: Install uv
+        uses: astral-sh/setup-uv@v5
+
+      # Install project dependencies using the committed lockfile.
+      - name: Install dependencies
+        working-directory: server
+        run: uv sync --locked --dev
+
+      # Create a separate database for automated tests.
+      - name: Create test database
+        run: |
+          PGPASSWORD=development createdb \
+            -h localhost \
+            -U pakinggan \
+            pakinggan_test
+
+      # Check Python code for linting issues.
+      - name: Run Ruff lint checks
+        working-directory: server
+        run: uv run ruff check .
+
+      # Verify Python files follow Ruff formatting rules.
+      - name: Check formatting
+        working-directory: server
+        run: uv run ruff format --check .
+
+      # Execute backend tests using pytest.
+      - name: Run tests
+        working-directory: server
+        run: uv run pytest -v
+
+  # --------------------------------------------------
+  # Frontend CI: React, TypeScript, ESLint, and Vite
+  # --------------------------------------------------
+  frontend:
+    name: Frontend Checks
+
+    # Run the job on a fresh Ubuntu virtual machine.
+    runs-on: ubuntu-latest
+
+    steps:
+      # Download the repository contents.
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      # Install Node.js for the frontend environment.
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+          # Cache npm dependencies to speed up future workflow runs.
+          cache: npm
+          cache-dependency-path: client/package-lock.json
+
+      # Install exact dependencies from package-lock.json.
+      - name: Install dependencies
+        working-directory: client
+        run: npm ci
+
+      # Check frontend code for linting issues.
+      - name: Run ESLint
+        working-directory: client
+        run: npm run lint
+
+      # Check TypeScript and create a production build with Vite.
+      - name: Build application
+        working-directory: client
+        run: npm run build
