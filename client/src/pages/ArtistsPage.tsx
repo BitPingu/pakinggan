@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import type { SubmitEvent } from 'react'
 import {
   createArtist,
+  deleteArtist,
   getArtists,
   updateArtist,
 } from '../api/artists'
@@ -37,6 +38,12 @@ function ArtistsPage() {
 
   // Stores any error that occurs while updating an artist.
   const [editError, setEditError] = useState<string | null>(null)
+
+  // Tracks which artist is currently being deleted.
+  const [deletingArtistId, setDeletingArtistId] = useState<number | null>(null)
+
+  // Stores any error that occurs while deleting an artist.
+  const [deleteError, setDeleteError] = useState<string | null>(null)
 
   // Fetches the artist list when the page first loads.
   useEffect(() => {
@@ -136,6 +143,33 @@ function ArtistsPage() {
     }
   }
 
+  // Deletes an artist through the backend.
+  async function handleDeleteArtist(artist: Artist) {
+    // Ask the user to confirm before deleting.
+    const confirmed = window.confirm(
+      `Are you sure you want to delete ${artist.name}?`,
+    )
+
+    if (!confirmed) return
+
+    setDeletingArtistId(artist.id)
+    setDeleteError(null)
+
+    try {
+      // Send the delete request to the backend.
+      await deleteArtist(artist.id)
+
+      // Remove the deleted artist from the frontend list.
+      setArtists((currentArtists) =>
+        currentArtists.filter((currentArtist) => currentArtist.id !== artist.id),
+      )
+    } catch {
+      setDeleteError('Unable to delete artist. Please try again.')
+    } finally {
+      setDeletingArtistId(null)
+    }
+  }
+
   return (
     <>
       {/* Page heading */}
@@ -194,70 +228,93 @@ function ArtistsPage() {
           <div className="dashboard-empty-state">
             <p>{error}</p>
           </div>
-        ) : artists.length === 0 ? (
-          <div className="dashboard-empty-state">
-            <span className="empty-state-icon">♫</span>
-            <h3>No artists yet</h3>
-            <p>
-              Artists you add to your library will appear here.
-            </p>
-          </div>
         ) : (
-          // Display the artist cards
-          <div className="artists-list">
-            {artists.map((artist) => (
-              <div
-                className={`stat-card ${editingArtistId === artist.id ? 'editing' : ''}`}
-                key={artist.id}
-              >
-                {/* Show the edit form for the selected artist */}
-                {editingArtistId === artist.id ? (
-                  <form onSubmit={handleUpdateArtist} className="artist-edit-form">
-                    <input
-                      type="text"
-                      value={editedArtistName}
-                      onChange={(event) => setEditedArtistName(event.target.value)}
-                      disabled={isUpdating}
-                    />
+          <>
+            {/* Display an error if artist deletion fails */}
+            {deleteError && <p className="form-error">{deleteError}</p>}
 
-                    <div className="artist-edit-form-actions">
-                      <button
-                        type="submit"
-                        className="save-button"
-                        disabled={isUpdating || !editedArtistName.trim()}
-                      >
-                        {isUpdating ? 'Saving...' : 'Save'}
-                      </button>
-
-                      <button
-                        type="button"
-                        className="cancel-button"
-                        onClick={handleCancelEdit}
-                        disabled={isUpdating}
-                      >
-                        Cancel
-                      </button>
-                    </div>
-
-                    {/* Display an error if the update fails */}
-                    {editError && <p className="form-error">{editError}</p>}
-                  </form>
-                ) : (
-                  // Show the artist name and edit button
-                  <>
-                    <h3>{artist.name}</h3>
-                    <button
-                      type="button"
-                      className="edit-button"
-                      onClick={() => handleEditClick(artist)}
-                    >
-                      Edit
-                    </button>
-                  </>
-                )}
+            {artists.length === 0 ? (
+              <div className="dashboard-empty-state">
+                <span className="empty-state-icon">♫</span>
+                <h3>No artists yet</h3>
+                <p>
+                  Artists you add to your library will appear here.
+                </p>
               </div>
-            ))}
-          </div>
+            ) : (
+              // Display the artist cards
+              <div className="artists-list">
+                {artists.map((artist) => (
+                  <div
+                    className={`stat-card ${editingArtistId === artist.id ? 'editing' : ''}`}
+                    key={artist.id}
+                  >
+                    {/* Show the edit form for the selected artist */}
+                    {editingArtistId === artist.id ? (
+                      <form onSubmit={handleUpdateArtist} className="artist-edit-form">
+                        <input
+                          type="text"
+                          value={editedArtistName}
+                          onChange={(event) => setEditedArtistName(event.target.value)}
+                          disabled={isUpdating}
+                        />
+
+                        <div className="artist-edit-form-actions">
+                          <button
+                            type="submit"
+                            className="save-button"
+                            disabled={isUpdating || !editedArtistName.trim()}
+                          >
+                            {isUpdating ? 'Saving...' : 'Save'}
+                          </button>
+
+                          <button
+                            type="button"
+                            className="cancel-button"
+                            onClick={handleCancelEdit}
+                            disabled={isUpdating}
+                          >
+                            Cancel
+                          </button>
+                        </div>
+
+                        {/* Display an error if the update fails */}
+                        {editError && <p className="form-error">{editError}</p>}
+                      </form>
+                    ) : (
+                      // Show the artist name and edit button
+                      <>
+                        {/* Display the artist's name */}
+                        <h3>{artist.name}</h3>
+
+                        {/* Group the artist management buttons */}
+                        <div className="artist-card-actions">
+                          {/* Button to enter edit mode */}
+                          <button
+                            type="button"
+                            className="edit-button"
+                            onClick={() => handleEditClick(artist)}
+                          >
+                            Edit
+                          </button>
+
+                          {/* Button to delete the artist */}
+                          <button
+                            type="button"
+                            className="delete-button"
+                            onClick={() => handleDeleteArtist(artist)}
+                            disabled={deletingArtistId === artist.id}
+                          >
+                            {deletingArtistId === artist.id ? 'Deleting...' : 'Delete'}
+                          </button>
+                        </div>
+                      </>
+                    )}
+                  </div>
+                ))}
+              </div>
+            )}
+          </>
         )}
       </section>
     </>

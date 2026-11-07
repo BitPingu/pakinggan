@@ -57,3 +57,16 @@ export async function updateArtist(
   // return the updated artist
   return response.json()
 }
+
+// Deletes an artist through the backend.
+export async function deleteArtist(id: number): Promise<void> {
+  // send a delete request to fastapi
+  const response = await fetch(`${API_BASE_URL}/api/artists/${id}`, {
+    method: 'DELETE',
+  })
+
+  // check if request succeeded
+  if (!response.ok) {
+    throw new Error('Failed to delete artist')
+  }
+}
