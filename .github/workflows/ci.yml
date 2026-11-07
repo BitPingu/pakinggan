@@ -118,7 +118,15 @@ jobs:
           cache-dependency-path: client/package-lock.json
 
       # Install exact dependencies from package-lock.json.
-      - name: Install dependencies
+      - name: Install root dependencies
+        run: npm ci
+
+      # Check formatting across the repository.
+      - name: Check formatting
+        run: npm run format:check
+
+      # Install frontend dependencies.
+      - name: Install frontend dependencies
         working-directory: client
         run: npm ci
 
