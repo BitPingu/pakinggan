@@ -1,20 +1,25 @@
-import { useEffect, useState } from "react";
+
+import AppLayout from './components/layout/AppLayout'
+import './App.css'
 
 function App() {
-  const [status, setStatus] = useState("Checking...");
-
-  useEffect(() => {
-    fetch("http://127.0.0.1:8000/api/health")
-      .then((response) => response.json())
-      .then((data) => setStatus(data.status))
-      .catch(() => setStatus("Backend unavailable"));
-  }, []);
-
   return (
-    <div>
-      <h1>Pakinggan</h1>
-      <p>Backend status: {status}</p>
-    </div>
+    <AppLayout>
+      <header className="page-header">
+        <div>
+          <p className="page-eyebrow">YOUR MUSIC</p>
+          <h1>Overview</h1>
+          <p className="page-description">
+            Your listening activity, all in one place.
+          </p>
+        </div>
+      </header>
+
+      <section className="dashboard-placeholder">
+        <h2>Welcome to Pakinggan</h2>
+        <p>Your music journey starts here.</p>
+      </section>
+    </AppLayout>
   )
 }
 
