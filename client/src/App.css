@@ -1,3 +1,4 @@
+/* Application layout */
 
 .app-layout {
   min-height: 100vh;
@@ -116,7 +117,7 @@
   padding: 48px;
 }
 
-/* Page header */
+/* Page headers */
 
 .page-header h1 {
   margin: 8px 0;
@@ -172,7 +173,7 @@
   font-size: 20px;
 }
 
-/* Dashboard empty states */
+/* Empty states */
 
 .dashboard-empty-state {
   display: flex;
@@ -204,6 +205,29 @@
   color: #9696a2;
   font-size: 13px;
   line-height: 1.6;
+}
+
+/* Artists page */
+
+.artists-section {
+  margin-top: 40px;
+}
+
+.artists-section-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 18px;
+}
+
+.artists-section-header h2 {
+  margin: 0;
+  font-size: 20px;
+}
+
+.artists-count {
+  color: #9696a2;
+  font-size: 13px;
 }
 
 /* Responsive layout */

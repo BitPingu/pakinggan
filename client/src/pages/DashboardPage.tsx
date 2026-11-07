@@ -1,4 +1,3 @@
-
 const statistics = [
   { label: 'Total Tracks', value: '0' },
   { label: 'Artists', value: '0' },
