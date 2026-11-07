@@ -90,17 +90,28 @@ function ArtistsPage() {
         </div>
 
         <form onSubmit={handleCreateArtist} className="artist-form">
-          <input
-            type="text"
-            placeholder="Enter artist name..."
-            value={artistName}
-            onChange={(event) => setArtistName(event.target.value)}
-            disabled={isCreating}
-          />
+          <div className="artist-form-controls">
+            <input
+              type="text"
+              placeholder="Enter artist name..."
+              value={artistName}
+              onChange={(event) => setArtistName(event.target.value)}
+              disabled={isCreating}
+            />
 
-          <button type="submit" disabled={isCreating || !artistName.trim()}>
-            {isCreating ? 'Adding...' : 'Add Artist'}
-          </button>
+            <button
+              type="submit"
+              disabled={isCreating || !artistName.trim()}
+            >
+              {isCreating ? 'Adding...' : 'Add Artist'}
+            </button>
+          </div>
+
+          {artistName.length > 0 && !artistName.trim() && (
+            <p className="form-error">
+              Artist name cannot be empty.
+            </p>
+          )}
         </form>
 
         {createError && <p className="form-error">{createError}</p>}

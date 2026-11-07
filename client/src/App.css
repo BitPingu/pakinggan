@@ -235,10 +235,12 @@
 /* Artist form */
 
 .artist-form {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 12px;
   margin-bottom: 24px;
+}
+
+.artist-form-controls {
+  display: flex;
+  gap: 12px;
 }
 
 .artist-form input {
@@ -281,7 +283,7 @@
 }
 
 .form-error {
-  margin: 0 0 20px;
+  margin: 8px 0 0;
   color: #f87171;
   font-size: 13px;
 }
@@ -303,7 +305,11 @@
     grid-template-columns: 1fr;
   }
 
-  .artist-form {
+  .artist-form-controls {
     flex-direction: column;
+  }
+
+  .artist-form button {
+    width: 100%;
   }
 }
