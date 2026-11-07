@@ -166,3 +166,46 @@ def test_create_user_password_hash(client, db_session):
     assert user is not None
     assert verify_password("securepassword123", user.hashed_password)  # successful
     assert not verify_password("wrong-password", user.hashed_password)  # unsuccessful
+
+
+# valid credentials return an access token
+def test_login_success(client, user):
+    response = client.post(
+        "/api/users/login",
+        json={
+            "username": "gavin",
+            "password": "securepassword123",
+        },
+    )
+
+    assert response.status_code == 200
+    assert "access_token" in response.json()
+    assert response.json()["token_type"] == "bearer"
+
+
+# an incorrect password returns 401
+def test_login_incorrect_password(client, user):
+    response = client.post(
+        "/api/users/login",
+        json={
+            "username": "gavin",
+            "password": "wrongpassword",
+        },
+    )
+
+    assert response.status_code == 401
+    assert response.json()["detail"] == "Invalid username or password"
+
+
+# a nonexistent username also returns 401
+def test_login_nonexistent_user(client):
+    response = client.post(
+        "/api/users/login",
+        json={
+            "username": "unknown",
+            "password": "securepassword123",
+        },
+    )
+
+    assert response.status_code == 401
+    assert response.json()["detail"] == "Invalid username or password"

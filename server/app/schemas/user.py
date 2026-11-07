@@ -28,3 +28,15 @@ class UserResponse(BaseModel):
 
     # read from object attributes
     model_config = ConfigDict(from_attributes=True)
+
+
+# validates the username and password submitted by the user
+class UserLogin(BaseModel):
+    username: str = Field(min_length=1, max_length=50)
+    password: str = Field(min_length=1, max_length=128)
+
+
+# defines what the api returns after successful authentication
+class TokenResponse(BaseModel):
+    access_token: str
+    token_type: str = "bearer"
