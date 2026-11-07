@@ -282,6 +282,99 @@
   cursor: not-allowed;
 }
 
+/* Artist edit form */
+
+.artist-edit-form {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin-top: 16px;
+}
+
+.artist-edit-form input {
+  width: 100%;
+  min-width: 0;
+  padding: 10px 12px;
+  border: 1px solid #292930;
+  border-radius: 8px;
+  outline: none;
+  background: #101014;
+  color: #f5f5f5;
+}
+
+.artist-edit-form input:focus {
+  border-color: #a78bfa;
+}
+
+.artist-edit-form-actions {
+  display: flex;
+  gap: 8px;
+}
+
+.artist-edit-form button {
+  padding: 9px 16px;
+  border: none;
+  border-radius: 8px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+/* Reduce card padding while editing an artist */
+
+.stat-card.editing {
+  padding: 16px;
+}
+
+.stat-card.editing .artist-edit-form {
+  margin-top: 0;
+}
+
+/* Artist card buttons */
+
+.save-button {
+  background: #a78bfa;
+  color: #101014;
+}
+
+.save-button:hover:not(:disabled) {
+  background: #c4b5fd;
+}
+
+.cancel-button {
+  background: #292930;
+  color: #f5f5f5;
+}
+
+.cancel-button:hover:not(:disabled) {
+  background: #3a3a44;
+}
+
+.artist-edit-form button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* Artist card edit button */
+
+.edit-button {
+  margin-top: 16px;
+  padding: 9px 16px;
+  border: none;
+  border-radius: 8px;
+  background: #a78bfa;
+  color: #101014;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+.edit-button:hover {
+  background: #c4b5fd;
+}
+
+/* Form validation and API errors */
+
 .form-error {
   margin: 8px 0 0;
   color: #f87171;

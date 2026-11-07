@@ -34,3 +34,26 @@ export async function createArtist(name: string): Promise<Artist> {
   // return the newly created artist
   return response.json()
 }
+
+// Updates an existing artist through the backend.
+export async function updateArtist(
+  id: number,
+  name: string,
+): Promise<Artist> {
+  // send a put request to fastapi
+  const response = await fetch(`${API_BASE_URL}/api/artists/${id}`, {
+    method: 'PUT',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({ name }),
+  })
+
+  // check if request succeeded
+  if (!response.ok) {
+    throw new Error('Failed to update artist')
+  }
+
+  // return the updated artist
+  return response.json()
+}
