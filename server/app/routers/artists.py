@@ -91,6 +91,13 @@ def delete_artist(artist_id: int, db: Session = Depends(get_db)):
             detail="Artist not found",
         )
 
+    # artist with albums
+    if db_artist.albums:
+        raise HTTPException(
+            status_code=409,
+            detail="Cannot delete an artist that has associated albums",
+        )
+
     # mark the artist for deletion
     db.delete(db_artist)
 

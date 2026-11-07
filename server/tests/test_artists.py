@@ -126,8 +126,10 @@ def test_delete_artist_with_albums(client, album):
     # attempt to delete the artist
     response = client.delete(f"/api/artists/{artist_id}")
 
-    assert response.status_code == 500
-    assert response.json() == {"detail": "A database error occurred"}
+    assert response.status_code == 409
+    assert response.json()["detail"] == (
+        "Cannot delete an artist that has associated albums"
+    )
 
     # verify artist still exists
     get_response = client.get(f"/api/artists/{artist_id}")
