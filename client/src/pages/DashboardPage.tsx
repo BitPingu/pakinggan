@@ -1,14 +1,9 @@
 
-const recentlyPlayed = [
-  { title: 'Weird Fishes/Arpeggi', artist: 'Radiohead', album: 'In Rainbows' },
-  { title: 'My Love Mine All Mine', artist: 'Mitski', album: 'The Land Is Inhospitable and So Are We' },
-  { title: '505', artist: 'Arctic Monkeys', album: 'Favourite Worst Nightmare' },
-]
-
-const topArtists = [
-  { name: 'Radiohead', plays: 128 },
-  { name: 'Mitski', plays: 96 },
-  { name: 'Arctic Monkeys', plays: 84 },
+const statistics = [
+  { label: 'Total Tracks', value: '0' },
+  { label: 'Artists', value: '0' },
+  { label: 'Albums', value: '0' },
+  { label: 'Listening Time', value: '0 hrs' },
 ]
 
 function DashboardPage() {
@@ -23,52 +18,36 @@ function DashboardPage() {
       </header>
 
       <section className="dashboard-stats">
-        <div className="stat-card">
-          <span>Total Tracks</span>
-          <h2>248</h2>
-        </div>
-
-        <div className="stat-card">
-          <span>Artists</span>
-          <h2>42</h2>
-        </div>
-
-        <div className="stat-card">
-          <span>Albums</span>
-          <h2>86</h2>
-        </div>
-
-        <div className="stat-card">
-          <span>Listening Time</span>
-          <h2>126 hrs</h2>
-        </div>
+        {statistics.map((stat) => (
+          <div className="stat-card" key={stat.label}>
+            <span>{stat.label}</span>
+            <h2>{stat.value}</h2>
+          </div>
+        ))}
       </section>
 
       <section className="dashboard-section">
         <h2>Recently Played</h2>
 
-        <div className="dashboard-list">
-          {recentlyPlayed.map((track) => (
-            <div className="dashboard-list-item" key={track.title}>
-              <div>
-                <strong>{track.title}</strong>
-                <p>{track.artist} · {track.album}</p>
-              </div>
-            </div>
-          ))}
+        <div className="dashboard-empty-state">
+          <span className="empty-state-icon">♫</span>
+          <h3>No listening history yet</h3>
+          <p>
+            Your recently played tracks will appear here once
+            you start tracking your music.
+          </p>
         </div>
       </section>
 
       <section className="dashboard-section">
         <h2>Top Artists</h2>
 
-        <div className="dashboard-list">
-          {topArtists.map((artist) => (
-            <div className="dashboard-list-item" key={artist.name}>
-              <strong>{artist.name}</strong>
-              <span>{artist.plays} plays</span>
-            </div>
-          ))}
+        <div className="dashboard-empty-state">
+          <span className="empty-state-icon">♪</span>
+          <h3>No artists yet</h3>
+          <p>
+            Your most listened-to artists will appear here.
+          </p>
         </div>
       </section>
     </>

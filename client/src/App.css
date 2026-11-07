@@ -130,24 +130,8 @@
   letter-spacing: 1.5px;
 }
 
-.page-description,
-.dashboard-placeholder p {
+.page-description {
   color: #9696a2;
-}
-
-/* Dashboard placeholder */
-
-.dashboard-placeholder {
-  margin-top: 40px;
-  padding: 32px;
-  border: 1px solid #292930;
-  border-radius: 12px;
-  background: #17171d;
-}
-
-.dashboard-placeholder h2 {
-  margin-top: 0;
-  font-size: 20px;
 }
 
 /* Dashboard statistics */
@@ -188,37 +172,38 @@
   font-size: 20px;
 }
 
-/* Dashboard lists */
+/* Dashboard empty states */
 
-.dashboard-list {
-  overflow: hidden;
+.dashboard-empty-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 180px;
+  padding: 32px;
   border: 1px solid #292930;
   border-radius: 12px;
   background: #17171d;
+  text-align: center;
 }
 
-.dashboard-list-item {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 16px;
-  padding: 18px 22px;
-  border-bottom: 1px solid #292930;
+.empty-state-icon {
+  margin-bottom: 12px;
+  color: #a78bfa;
+  font-size: 28px;
 }
 
-.dashboard-list-item:last-child {
-  border-bottom: none;
+.dashboard-empty-state h3 {
+  margin: 0;
+  font-size: 15px;
 }
 
-.dashboard-list-item strong {
-  font-size: 14px;
-}
-
-.dashboard-list-item p,
-.dashboard-list-item > span {
-  margin: 6px 0 0;
+.dashboard-empty-state p {
+  max-width: 360px;
+  margin: 8px 0 0;
   color: #9696a2;
-  font-size: 12px;
+  font-size: 13px;
+  line-height: 1.6;
 }
 
 /* Responsive layout */
