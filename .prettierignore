@@ -1,0 +1,7 @@
+node_modules/
+client/node_modules/
+client/dist/
+server/.venv/
+server/.pytest_cache/
+server/__pycache__/
+server/.ruff_cache/

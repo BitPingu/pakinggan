@@ -70,8 +70,8 @@ function DashboardPage() {
           <span className="empty-state-icon">♫</span>
           <h3>No listening history yet</h3>
           <p>
-            Your recently played tracks will appear here once
-            you start tracking your listening activity.
+            Your recently played tracks will appear here once you start tracking
+            your listening activity.
           </p>
         </div>
       </section>
@@ -83,8 +83,8 @@ function DashboardPage() {
           <span className="empty-state-icon">♪</span>
           <h3>No listening data yet</h3>
           <p>
-            Your most listened-to artists will appear here once
-            you start tracking your listening activity.
+            Your most listened-to artists will appear here once you start
+            tracking your listening activity.
           </p>
         </div>
       </section>

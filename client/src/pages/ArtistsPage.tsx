@@ -122,10 +122,7 @@ function ArtistsPage() {
 
     try {
       // Send the updated name to the backend.
-      const updatedArtist = await updateArtist(
-        editingArtistId,
-        trimmedName,
-      )
+      const updatedArtist = await updateArtist(editingArtistId, trimmedName)
 
       // Replace the old artist with the updated artist in the list.
       setArtists((currentArtists) =>
@@ -161,7 +158,9 @@ function ArtistsPage() {
 
       // Remove the deleted artist from the frontend list.
       setArtists((currentArtists) =>
-        currentArtists.filter((currentArtist) => currentArtist.id !== artist.id),
+        currentArtists.filter(
+          (currentArtist) => currentArtist.id !== artist.id,
+        ),
       )
     } catch {
       setDeleteError('Unable to delete artist. Please try again.')
@@ -200,19 +199,14 @@ function ArtistsPage() {
               disabled={isCreating}
             />
 
-            <button
-              type="submit"
-              disabled={isCreating || !artistName.trim()}
-            >
+            <button type="submit" disabled={isCreating || !artistName.trim()}>
               {isCreating ? 'Adding...' : 'Add Artist'}
             </button>
           </div>
 
           {/* Display validation feedback for whitespace-only input */}
           {artistName.length > 0 && !artistName.trim() && (
-            <p className="form-error">
-              Artist name cannot be empty.
-            </p>
+            <p className="form-error">Artist name cannot be empty.</p>
           )}
         </form>
 
@@ -237,9 +231,7 @@ function ArtistsPage() {
               <div className="dashboard-empty-state">
                 <span className="empty-state-icon">♫</span>
                 <h3>No artists yet</h3>
-                <p>
-                  Artists you add to your library will appear here.
-                </p>
+                <p>Artists you add to your library will appear here.</p>
               </div>
             ) : (
               // Display the artist cards
@@ -251,11 +243,16 @@ function ArtistsPage() {
                   >
                     {/* Show the edit form for the selected artist */}
                     {editingArtistId === artist.id ? (
-                      <form onSubmit={handleUpdateArtist} className="artist-edit-form">
+                      <form
+                        onSubmit={handleUpdateArtist}
+                        className="artist-edit-form"
+                      >
                         <input
                           type="text"
                           value={editedArtistName}
-                          onChange={(event) => setEditedArtistName(event.target.value)}
+                          onChange={(event) =>
+                            setEditedArtistName(event.target.value)
+                          }
                           disabled={isUpdating}
                         />
 
@@ -305,7 +302,9 @@ function ArtistsPage() {
                             onClick={() => handleDeleteArtist(artist)}
                             disabled={deletingArtistId === artist.id}
                           >
-                            {deletingArtistId === artist.id ? 'Deleting...' : 'Delete'}
+                            {deletingArtistId === artist.id
+                              ? 'Deleting...'
+                              : 'Delete'}
                           </button>
                         </div>
                       </>

@@ -9,9 +9,7 @@ function AppLayout({ children }: AppLayoutProps) {
   return (
     <div className="app-layout">
       <Sidebar />
-      <main className="main-content">
-        {children}
-      </main>
+      <main className="main-content">{children}</main>
     </div>
   )
 }

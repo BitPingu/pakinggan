@@ -36,10 +36,7 @@ export async function createArtist(name: string): Promise<Artist> {
 }
 
 // Updates an existing artist through the backend.
-export async function updateArtist(
-  id: number,
-  name: string,
-): Promise<Artist> {
+export async function updateArtist(id: number, name: string): Promise<Artist> {
   // send a put request to fastapi
   const response = await fetch(`${API_BASE_URL}/api/artists/${id}`, {
     method: 'PUT',

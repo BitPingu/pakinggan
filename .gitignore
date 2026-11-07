@@ -154,7 +154,8 @@ __pycache__/
 .env
 .pytest_cache/
 
-# Misc
-*.DS_Store
-*.vscode
-
+# Editor and OS files
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
