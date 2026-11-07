@@ -1,14 +1,33 @@
+/* Global defaults, typography, background, box sizing */
+
+/* Global box sizing */
 * {
   box-sizing: border-box;
 }
 
+/* Application background */
+html,
+body,
+#root {
+  min-height: 100%;
+  background: #101014;
+}
+
+/* Prevent overscroll background from appearing */
+html {
+  overscroll-behavior: none;
+}
+
+/* Body defaults */
 body {
   margin: 0;
   min-width: 320px;
   min-height: 100vh;
   font-family: Inter, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  color: #f5f5f5;
 }
 
+/* Form element fonts */
 button,
 input {
   font: inherit;

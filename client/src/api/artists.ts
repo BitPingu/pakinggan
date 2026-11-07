@@ -14,3 +14,23 @@ export async function getArtists(): Promise<Artist[]> {
   // convert response into javascript data
   return response.json()
 }
+
+// Creates a new artist through the backend.
+export async function createArtist(name: string): Promise<Artist> {
+  // send a post request to fastapi
+  const response = await fetch(`${API_BASE_URL}/api/artists/`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({ name }),
+  })
+
+  // check if request succeeded
+  if (!response.ok) {
+    throw new Error('Failed to create artist')
+  }
+
+  // return the newly created artist
+  return response.json()
+}

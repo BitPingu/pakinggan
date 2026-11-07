@@ -1,9 +1,17 @@
+/* Sidebar, page layouts, dashboard, artist cards, forms */
+
 /* Application layout */
 
 .app-layout {
   min-height: 100vh;
   background: #101014;
   color: #f5f5f5;
+}
+
+.main-content {
+  min-height: 100vh;
+  margin-left: 240px;
+  padding: 48px;
 }
 
 /* Sidebar */
@@ -34,11 +42,9 @@
   font-size: 26px;
 }
 
-/* Sidebar navigation */
-
 .sidebar-heading {
-  padding: 0 10px;
   margin-bottom: 12px;
+  padding: 0 10px;
   color: #858590;
   font-size: 11px;
   font-weight: 700;
@@ -75,8 +81,6 @@
   font-size: 18px;
 }
 
-/* Sidebar profile */
-
 .sidebar-bottom {
   display: flex;
   align-items: center;
@@ -109,14 +113,6 @@
   font-size: 11px;
 }
 
-/* Main content */
-
-.main-content {
-  min-height: 100vh;
-  margin-left: 240px;
-  padding: 48px;
-}
-
 /* Page headers */
 
 .page-header h1 {
@@ -135,7 +131,7 @@
   color: #9696a2;
 }
 
-/* Dashboard statistics */
+/* Dashboard */
 
 .dashboard-stats {
   display: grid;
@@ -159,10 +155,7 @@
 .stat-card h2 {
   margin: 14px 0 0;
   font-size: 28px;
-  font-weight: 700;
 }
-
-/* Dashboard sections */
 
 .dashboard-section {
   margin-top: 40px;
@@ -172,8 +165,6 @@
   margin-bottom: 18px;
   font-size: 20px;
 }
-
-/* Empty states */
 
 .dashboard-empty-state {
   display: flex;
@@ -207,7 +198,7 @@
   line-height: 1.6;
 }
 
-/* Artists page */
+/* Artists */
 
 .artists-section {
   margin-top: 40px;
@@ -230,6 +221,71 @@
   font-size: 13px;
 }
 
+.artists-list {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  gap: 16px;
+}
+
+.artists-list .stat-card h3 {
+  margin: 0;
+  font-size: 17px;
+}
+
+/* Artist form */
+
+.artist-form {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin-bottom: 24px;
+}
+
+.artist-form input {
+  flex: 1;
+  min-width: 0;
+  padding: 12px 16px;
+  border: 1px solid #292930;
+  border-radius: 8px;
+  outline: none;
+  background: #17171d;
+  color: #f5f5f5;
+}
+
+.artist-form input:focus {
+  border-color: #a78bfa;
+}
+
+.artist-form input::placeholder {
+  color: #858590;
+}
+
+.artist-form button {
+  padding: 12px 20px;
+  border: none;
+  border-radius: 8px;
+  background: #a78bfa;
+  color: #101014;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+.artist-form button:hover:not(:disabled) {
+  background: #c4b5fd;
+}
+
+.artist-form button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.form-error {
+  margin: 0 0 20px;
+  color: #f87171;
+  font-size: 13px;
+}
+
 /* Responsive layout */
 
 @media (max-width: 1000px) {
@@ -245,5 +301,9 @@
 
   .dashboard-stats {
     grid-template-columns: 1fr;
+  }
+
+  .artist-form {
+    flex-direction: column;
   }
 }

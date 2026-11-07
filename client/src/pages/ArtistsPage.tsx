@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
-import { getArtists } from '../api/artists'
+import type { SubmitEvent } from 'react'
+import { createArtist, getArtists } from '../api/artists'
 import type { Artist } from '../types/music'
 
 function ArtistsPage() {
@@ -11,6 +12,15 @@ function ArtistsPage() {
 
   // Stores an error message if the request fails.
   const [error, setError] = useState<string | null>(null)
+
+  // Stores the artist name entered in the form.
+  const [artistName, setArtistName] = useState('')
+
+  // Tracks whether an artist is being created.
+  const [isCreating, setIsCreating] = useState(false)
+
+  // Stores errors encountered during artist creation.
+  const [createError, setCreateError] = useState<string | null>(null)
 
   // Fetches artists when the page first loads.
   useEffect(() => {
@@ -31,6 +41,36 @@ function ArtistsPage() {
     fetchArtists()
   }, [])
 
+  // Handles submitting the new artist form.
+  async function handleCreateArtist(event: SubmitEvent<HTMLFormElement>) {
+    event.preventDefault()
+
+    // Prevent empty or whitespace-only artist names.
+    const trimmedName = artistName.trim()
+
+    if (!trimmedName) {
+      return
+    }
+
+    setIsCreating(true)
+    setCreateError(null)
+
+    try {
+      // Create the artist through the backend.
+      const newArtist = await createArtist(trimmedName)
+
+      // Add the new artist to the existing list.
+      setArtists((currentArtists) => [...currentArtists, newArtist])
+
+      // Clear the input after successful creation.
+      setArtistName('')
+    } catch {
+      setCreateError('Unable to create artist. Please try again.')
+    } finally {
+      setIsCreating(false)
+    }
+  }
+
   return (
     <>
       <header className="page-header">
@@ -48,6 +88,22 @@ function ArtistsPage() {
             {artists.length} {artists.length === 1 ? 'artist' : 'artists'}
           </span>
         </div>
+
+        <form onSubmit={handleCreateArtist} className="artist-form">
+          <input
+            type="text"
+            placeholder="Enter artist name..."
+            value={artistName}
+            onChange={(event) => setArtistName(event.target.value)}
+            disabled={isCreating}
+          />
+
+          <button type="submit" disabled={isCreating || !artistName.trim()}>
+            {isCreating ? 'Adding...' : 'Add Artist'}
+          </button>
+        </form>
+
+        {createError && <p className="form-error">{createError}</p>}
 
         {isLoading ? (
           <div className="dashboard-empty-state">
