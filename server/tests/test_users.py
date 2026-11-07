@@ -209,3 +209,42 @@ def test_login_nonexistent_user(client):
 
     assert response.status_code == 401
     assert response.json()["detail"] == "Invalid username or password"
+
+
+# user can retrieve their own profile (valid token)
+def test_get_current_user(client, user):
+    response = client.post(
+        "/api/users/login",
+        json={
+            "username": "gavin",
+            "password": "securepassword123",
+        },
+    )
+
+    token = response.json()["access_token"]
+
+    response = client.get(
+        "/api/users/me",
+        headers={"Authorization": f"Bearer {token}"},
+    )
+
+    assert response.status_code == 200
+    assert response.json()["id"] == user["id"]
+    assert response.json()["username"] == user["username"]
+
+
+# request is rejected (no token)
+def test_get_current_user_unauthenticated(client):
+    response = client.get("/api/users/me")
+
+    assert response.status_code == 401
+
+
+# request is rejected (invalid token)
+def test_get_current_user_invalid_token(client):
+    response = client.get(
+        "/api/users/me",
+        headers={"Authorization": "Bearer invalid-token"},
+    )
+
+    assert response.status_code == 401

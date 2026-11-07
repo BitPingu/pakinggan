@@ -1,12 +1,20 @@
 from datetime import datetime, timedelta, timezone
 
 import jwt
+from fastapi import Depends, HTTPException, status
+from fastapi.security import OAuth2PasswordBearer
 from pwdlib import PasswordHash
+from sqlalchemy.orm import Session
 
 from app.core.config import settings
+from app.database import get_db
+from app.models.user import User
 
 # selects a recommended password-hashing config
 password_hash = PasswordHash.recommended()
+
+# extracts the bearer token from the Authorization header
+oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/api/users/login")
 
 
 # converts a plaintext password into a secure hash
@@ -44,3 +52,31 @@ def decode_access_token(token: str) -> dict:
         settings.JWT_SECRET_KEY,
         algorithms=[settings.JWT_ALGORITHM],
     )
+
+
+# identifies the authenticated user
+def get_current_user(
+    token: str = Depends(oauth2_scheme),
+    db: Session = Depends(get_db),
+) -> User:
+    credentials_exception = HTTPException(
+        status_code=status.HTTP_401_UNAUTHORIZED,
+        detail="Could not validate credentials",
+        headers={"WWW-Authenticate": "Bearer"},
+    )
+
+    # validate and decode the token
+    try:
+        payload = decode_access_token(token)
+        user_id = int(payload.get("sub"))
+
+    except (jwt.InvalidTokenError, TypeError, ValueError):
+        raise credentials_exception
+
+    db_user = db.query(User).filter(User.id == user_id).first()
+
+    if db_user is None:
+        raise credentials_exception
+
+    # return the authenticated user
+    return db_user
