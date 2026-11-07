@@ -47,6 +47,7 @@ jobs:
 
     # Provide database connection strings to backend commands.
     env:
+      JWT_SECRET_KEY: "ci-test-secret-key-do-not-use-in-production"
       DATABASE_URL: postgresql+psycopg://pakinggan:development@localhost:5432/pakinggan
       TEST_DATABASE_URL: postgresql+psycopg://pakinggan:development@localhost:5432/pakinggan_test
 
