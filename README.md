@@ -10,12 +10,21 @@ A music tracking application that helps users organize their music library, trac
 - **ORM:** SQLAlchemy
 - **Migrations:** Alembic
 
+## Project Structure
+
+```text
+pakinggan/
+├── client/    # React frontend
+└── server/    # FastAPI backend
+```
+
 ## Getting Started
 
 ### Prerequisites
 
-- Node.js and npm
-- Python
+- Node.js (22 or later)
+- npm
+- Python (3.12 or later)
 - [uv](https://docs.astral.sh/uv/)
 - Docker Desktop
 
@@ -90,29 +99,24 @@ The frontend will be available at:
 
 http://localhost:5173
 
-## Running Tests
+## Scripts
 
-From the `server/` directory:
+All commands can be run from the project root using the root `package.json`.
 
-```bash
-uv run pytest
-```
+| Command                | Description                                      |
+| ---------------------- | ------------------------------------------------ |
+| `npm run dev`          | Start the frontend development server            |
+| `npm run format`       | Format project files with Prettier               |
+| `npm run format:check` | Check formatting without modifying files         |
+| `npm run lint`         | Run ESLint and Ruff                              |
+| `npm run build`        | Build the frontend for production                |
+| `npm run test`         | Run backend tests                                |
+| `npm run check`        | Run formatting checks, linting, build, and tests |
 
-Make sure PostgreSQL is running and the `pakinggan_test` database exists.
+## Recommended Workflow
 
-## Development Checks
+Run `npm run format` to format files when needed.
 
-From the project root:
+Run `npm run check` before committing changes to verify formatting, linting, tests, and the production build.
 
-```bash
-npm run format:check
-npm run lint
-npm run build
-npm run test
-```
-
-To run all checks together:
-
-```bash
-npm run check
-```
+Make sure PostgreSQL is running and the `pakinggan_test` database exists before running the checks.
