@@ -135,6 +135,7 @@
 .profile-info {
   display: flex;
   flex-direction: column;
+  min-width: 0;
   gap: 4px;
   font-size: 13px;
   font-weight: 500;
@@ -143,4 +144,33 @@
 .profile-subtitle {
   color: #858590;
   font-size: 11px;
+}
+
+/* Profile logout button */
+
+.profile-logout {
+  display: grid;
+  width: 34px;
+  height: 34px;
+  flex-shrink: 0;
+  margin-left: auto;
+  place-items: center;
+  border: none;
+  border-radius: 8px;
+  background: transparent;
+  color: #858590;
+  cursor: pointer;
+  transition:
+    background-color 0.2s ease,
+    color 0.2s ease;
+}
+
+.profile-logout:hover {
+  background: #292535;
+  color: #c4b5fd;
+}
+
+.profile-logout:focus-visible {
+  outline: 2px solid #a78bfa;
+  outline-offset: 2px;
 }

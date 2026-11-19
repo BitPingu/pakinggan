@@ -1,3 +1,5 @@
+import './LibrarySectionHeader.css'
+
 interface LibrarySectionHeaderProps {
   title: string
   count: string

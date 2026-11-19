@@ -3,11 +3,12 @@ import type { SubmitEvent } from 'react'
 import { createAlbum, deleteAlbum, getAlbums, updateAlbum } from '../api/albums'
 import { getArtists } from '../api/artists'
 import type { Album, Artist } from '../types/music'
-import PageHeader from '../components/common/PageHeader'
-import EmptyState from '../components/common/EmptyState'
-import LibrarySectionHeader from '../components/common/LibrarySectionHeader'
+import PageHeader from '../components/PageHeader/PageHeader'
+import EmptyState from '../components/EmptyState/EmptyState'
+import LibrarySectionHeader from '../components/LibrarySectionHeader/LibrarySectionHeader'
 import { Disc3, Pencil, Plus, Save, Trash2, X } from 'lucide-react'
 
+// Displays and manages the albums in the user's music library.
 function AlbumsPage() {
   // Stores the albums returned by the backend.
   const [albums, setAlbums] = useState<Album[]>([])
@@ -268,6 +269,7 @@ function AlbumsPage() {
           // Display the album cards.
           <div className="library-list">
             {albums.map((album) => {
+              // Find the artist associated with the current album.
               const artist = artists.find(
                 (currentArtist) => currentArtist.id === album.artist_id,
               )
@@ -368,7 +370,7 @@ function AlbumsPage() {
                           type="button"
                           className="delete-button"
                           onClick={() => handleDeleteAlbum(album)}
-                          disabled={deletingAlbumId === album.id}
+                          disabled={deletingAlbumId !== null}
                         >
                           <Trash2
                             size={16}

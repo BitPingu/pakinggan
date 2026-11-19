@@ -2,8 +2,8 @@ import { useEffect, useState } from 'react'
 import { getArtists } from '../api/artists'
 import { getAlbums } from '../api/albums'
 import type { Album, Artist } from '../types/music'
-import PageHeader from '../components/common/PageHeader'
-import EmptyState from '../components/common/EmptyState'
+import PageHeader from '../components/PageHeader/PageHeader'
+import EmptyState from '../components/EmptyState/EmptyState'
 import { Clock, Disc3, Music, Music2, Users } from 'lucide-react'
 
 // Displays the dashboard and library statistics.

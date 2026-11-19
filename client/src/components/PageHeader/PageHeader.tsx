@@ -1,3 +1,5 @@
+import './PageHeader.css'
+
 interface PageHeaderProps {
   eyebrow: string
   title: string

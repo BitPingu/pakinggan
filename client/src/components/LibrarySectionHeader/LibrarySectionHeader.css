@@ -1,0 +1,18 @@
+.library-section-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 18px;
+}
+
+.library-section-header h2 {
+  margin: 0;
+  font-size: 20px;
+  font-weight: 600;
+}
+
+.library-count {
+  color: #9696a2;
+  font-size: 13px;
+  font-weight: 500;
+}

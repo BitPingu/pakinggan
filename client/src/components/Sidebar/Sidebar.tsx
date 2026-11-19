@@ -1,5 +1,14 @@
-import { Disc3, History, LayoutDashboard, Music2, Users } from 'lucide-react'
-import { NavLink } from 'react-router-dom'
+import {
+  Disc3,
+  History,
+  LayoutDashboard,
+  LogOut,
+  Music2,
+  Users,
+} from 'lucide-react'
+import { NavLink, useNavigate } from 'react-router-dom'
+import { useAuth } from '../../hooks/useAuth'
+import './Sidebar.css'
 
 // Defines the navigation sections displayed in the sidebar.
 const navigationSections = [
@@ -21,7 +30,17 @@ const navigationSections = [
   },
 ]
 
+// Displays application navigation, branding, and the authenticated user's profile.
 function Sidebar() {
+  const { user, logout } = useAuth()
+  const navigate = useNavigate()
+
+  // Log out the user and return to the login page.
+  function handleLogout() {
+    logout()
+    navigate('/login', { replace: true })
+  }
+
   return (
     <aside className="sidebar">
       {/* Application branding */}
@@ -66,11 +85,22 @@ function Sidebar() {
 
       {/* User profile section */}
       <div className="sidebar-bottom">
-        <div className="profile-avatar">U</div>
-        <div className="profile-info">
-          <span>Your Profile</span>
-          <span className="profile-subtitle">Music enthusiast</span>
+        <div className="profile-avatar">
+          {user?.username.charAt(0).toUpperCase()}
         </div>
+        <div className="profile-info">
+          <span>{user?.username}</span>
+          <span className="profile-subtitle">Account</span>
+        </div>
+        <button
+          className="profile-logout"
+          type="button"
+          onClick={handleLogout}
+          aria-label="Log out"
+          title="Log out"
+        >
+          <LogOut size={18} />
+        </button>
       </div>
     </aside>
   )

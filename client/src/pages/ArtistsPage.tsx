@@ -7,11 +7,12 @@ import {
   updateArtist,
 } from '../api/artists'
 import type { Artist } from '../types/music'
-import PageHeader from '../components/common/PageHeader'
-import EmptyState from '../components/common/EmptyState'
-import LibrarySectionHeader from '../components/common/LibrarySectionHeader'
+import PageHeader from '../components/PageHeader/PageHeader'
+import EmptyState from '../components/EmptyState/EmptyState'
+import LibrarySectionHeader from '../components/LibrarySectionHeader/LibrarySectionHeader'
 import { Pencil, Plus, Save, Trash2, Users, X } from 'lucide-react'
 
+// Displays and manages the artists in the user's music library.
 function ArtistsPage() {
   // Stores the artists returned by the backend.
   const [artists, setArtists] = useState<Artist[]>([])
@@ -318,7 +319,7 @@ function ArtistsPage() {
                             type="button"
                             className="delete-button"
                             onClick={() => handleDeleteArtist(artist)}
-                            disabled={deletingArtistId === artist.id}
+                            disabled={deletingArtistId !== null}
                           >
                             <Trash2
                               size={16}
