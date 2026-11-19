@@ -57,13 +57,20 @@ export async function updateArtist(id: number, name: string): Promise<Artist> {
 
 // Deletes an artist through the backend.
 export async function deleteArtist(id: number): Promise<void> {
-  // send a delete request to fastapi
+  // Send a delete request to FastAPI.
   const response = await fetch(`${API_BASE_URL}/api/artists/${id}`, {
     method: 'DELETE',
   })
 
-  // check if request succeeded
+  // Handle artists that still have associated albums.
+  if (response.status === 409) {
+    throw new Error(
+      'Cannot delete this artist because they have associated albums. Delete or reassign their albums first.',
+    )
+  }
+
+  // Handle other unsuccessful responses.
   if (!response.ok) {
-    throw new Error('Failed to delete artist')
+    throw new Error('Unable to delete artist. Please try again.')
   }
 }

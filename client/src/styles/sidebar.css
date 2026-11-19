@@ -44,6 +44,7 @@
 .nav-item {
   display: flex;
   align-items: center;
+  min-width: 0;
   gap: 12px;
   padding: 11px 12px;
   border-radius: 8px;
@@ -51,8 +52,8 @@
   font-size: 14px;
   text-decoration: none;
   transition:
-    background 0.2s,
-    color 0.2s;
+    background-color 0.2s ease,
+    color 0.2s ease;
 }
 
 .nav-item:hover,
@@ -61,10 +62,21 @@
   color: #c4b5fd;
 }
 
+.nav-item:focus-visible {
+  outline: 2px solid #a78bfa;
+  outline-offset: 2px;
+}
+
 .nav-icon {
   width: 20px;
   text-align: center;
   font-size: 18px;
+}
+
+.nav-item > span:last-child {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .sidebar-bottom {

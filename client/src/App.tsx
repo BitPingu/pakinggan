@@ -2,6 +2,7 @@ import { Navigate, Route, Routes } from 'react-router-dom'
 import AppLayout from './components/layout/AppLayout'
 import DashboardPage from './pages/DashboardPage'
 import ArtistsPage from './pages/ArtistsPage'
+import AlbumsPage from './pages/AlbumsPage'
 import './App.css'
 
 // Defines the application's routes and page components.
@@ -15,6 +16,9 @@ function App() {
 
         {/* Artists library page */}
         <Route path="/artists" element={<ArtistsPage />} />
+
+        {/* Albums library page */}
+        <Route path="/albums" element={<AlbumsPage />} />
 
         {/* Redirect unknown URLs to the dashboard */}
         <Route path="*" element={<Navigate to="/" replace />} />

@@ -2,7 +2,9 @@
   "name": "pakinggan",
   "private": true,
   "scripts": {
-    "dev": "npm --prefix client run dev",
+    "client:dev": "npm run dev --prefix client",
+    "server:dev": "cd server && uv run fastapi dev app/main.py",
+    "dev": "npm run client:dev",
     "format": "prettier --write .",
     "format:check": "prettier --check .",
     "lint": "npm --prefix client run lint && cd server && uv run ruff check .",

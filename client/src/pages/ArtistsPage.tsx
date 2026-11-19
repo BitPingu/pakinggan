@@ -7,6 +7,9 @@ import {
   updateArtist,
 } from '../api/artists'
 import type { Artist } from '../types/music'
+import PageHeader from '../components/common/PageHeader'
+import EmptyState from '../components/common/EmptyState'
+import LibrarySectionHeader from '../components/common/LibrarySectionHeader'
 
 function ArtistsPage() {
   // Stores the artists returned by the backend.
@@ -49,14 +52,15 @@ function ArtistsPage() {
   useEffect(() => {
     async function fetchArtists() {
       try {
-        // call endpoint from fastapi
+        // Retrieve artists from the backend.
         const data = await getArtists()
-        // save artists in react state
+
+        // Update the artist list.
         setArtists(data)
       } catch {
         setError('Unable to load artists. Please try again later.')
       } finally {
-        // end the loading state
+        // Stop displaying the loading state.
         setIsLoading(false)
       }
     }
@@ -162,8 +166,12 @@ function ArtistsPage() {
           (currentArtist) => currentArtist.id !== artist.id,
         ),
       )
-    } catch {
-      setDeleteError('Unable to delete artist. Please try again.')
+    } catch (error) {
+      setDeleteError(
+        error instanceof Error
+          ? error.message
+          : 'Unable to delete artist. Please try again.',
+      )
     } finally {
       setDeletingArtistId(null)
     }
@@ -172,21 +180,23 @@ function ArtistsPage() {
   return (
     <>
       {/* Page heading */}
-      <header className="page-header">
-        <span className="page-eyebrow">YOUR LIBRARY</span>
-        <h1>Artists</h1>
-        <p className="page-description">
-          Explore and manage the artists in your music library.
-        </p>
-      </header>
+      <PageHeader
+        eyebrow="YOUR LIBRARY"
+        title="Artists"
+        description="Explore and manage the artists in your music library."
+      />
 
       <section className="library-section">
-        <div className="library-section-header">
-          <h2>Your Artists</h2>
-          <span className="library-count">
-            {artists.length} {artists.length === 1 ? 'artist' : 'artists'}
-          </span>
-        </div>
+        <LibrarySectionHeader
+          title="Your Artists"
+          count={
+            isLoading
+              ? '…'
+              : error
+                ? '—'
+                : `${artists.length} ${artists.length === 1 ? 'artist' : 'artists'}`
+          }
+        />
 
         {/* Form for creating a new artist */}
         <form onSubmit={handleCreateArtist} className="library-form">
@@ -200,7 +210,7 @@ function ArtistsPage() {
             />
 
             <button type="submit" disabled={isCreating || !artistName.trim()}>
-              {isCreating ? 'Adding...' : 'Add Artist'}
+              {isCreating ? 'Adding…' : 'Add Artist'}
             </button>
           </div>
 
@@ -215,24 +225,20 @@ function ArtistsPage() {
 
         {/* Loading, error, empty, and populated states */}
         {isLoading ? (
-          <div className="dashboard-empty-state">
-            <p>Loading artists...</p>
-          </div>
+          <EmptyState message="Loading artists…" />
         ) : error ? (
-          <div className="dashboard-empty-state">
-            <p>{error}</p>
-          </div>
+          <EmptyState message={error} />
         ) : (
           <>
             {/* Display an error if artist deletion fails */}
             {deleteError && <p className="form-error">{deleteError}</p>}
 
             {artists.length === 0 ? (
-              <div className="dashboard-empty-state">
-                <span className="empty-state-icon">♫</span>
-                <h3>No artists yet</h3>
-                <p>Artists you add to your library will appear here.</p>
-              </div>
+              <EmptyState
+                icon="♫"
+                title="No artists yet"
+                description="Artists you add to your library will appear here."
+              />
             ) : (
               // Display the artist cards
               <div className="library-list">
@@ -262,7 +268,7 @@ function ArtistsPage() {
                             className="save-button"
                             disabled={isUpdating || !editedArtistName.trim()}
                           >
-                            {isUpdating ? 'Saving...' : 'Save'}
+                            {isUpdating ? 'Saving…' : 'Save'}
                           </button>
 
                           <button
@@ -303,7 +309,7 @@ function ArtistsPage() {
                             disabled={deletingArtistId === artist.id}
                           >
                             {deletingArtistId === artist.id
-                              ? 'Deleting...'
+                              ? 'Deleting…'
                               : 'Delete'}
                           </button>
                         </div>

@@ -1,57 +1,74 @@
 import { useEffect, useState } from 'react'
 import { getArtists } from '../api/artists'
-import type { Artist } from '../types/music'
+import { getAlbums } from '../api/albums'
+import type { Album, Artist } from '../types/music'
+import PageHeader from '../components/common/PageHeader'
+import EmptyState from '../components/common/EmptyState'
 
-// Displays the dashboard overview and library statistics.
+// Displays the dashboard and library statistics.
 function DashboardPage() {
   // Stores the artists retrieved from the backend.
   const [artists, setArtists] = useState<Artist[]>([])
 
-  // Tracks whether the artist request is still running.
+  // Stores the albums retrieved from the backend.
+  const [albums, setAlbums] = useState<Album[]>([])
+
+  // Tracks whether dashboard data is still loading.
   const [isLoading, setIsLoading] = useState(true)
 
-  // Fetches artists when the dashboard first loads.
-  useEffect(() => {
-    async function fetchArtists() {
-      try {
-        // Retrieve all artists from the API.
-        const data = await getArtists()
+  // Stores an error if dashboard data cannot be retrieved.
+  const [error, setError] = useState<string | null>(null)
 
-        // Update the artist list with the API response.
-        setArtists(data)
+  // Fetches dashboard data when the page first loads.
+  useEffect(() => {
+    async function fetchDashboardData() {
+      try {
+        // Retrieve artists and albums concurrently.
+        const [artistData, albumData] = await Promise.all([
+          getArtists(),
+          getAlbums(),
+        ])
+
+        // Update the dashboard data.
+        setArtists(artistData)
+        setAlbums(albumData)
       } catch (error) {
-        // Log an error if the artist request fails.
-        console.error('Unable to load artists:', error)
+        // Log the error for debugging.
+        console.error('Unable to load dashboard data:', error)
+
+        // Display an error message on the dashboard.
+        setError('Unable to load dashboard data. Please try again.')
       } finally {
         // Stop displaying the loading state.
         setIsLoading(false)
       }
     }
 
-    fetchArtists()
+    fetchDashboardData()
   }, [])
 
-  // Dashboard statistics displayed in the overview cards.
+  // Dashboard statistics displayed in the stat cards.
   const statistics = [
-    { label: 'Total Tracks', value: '0' },
+    { label: 'Total Tracks', value: '—' },
     {
       label: 'Artists',
-      value: isLoading ? '...' : artists.length.toString(),
+      value: isLoading ? '…' : error ? '—' : artists.length.toString(),
     },
-    { label: 'Albums', value: '0' },
-    { label: 'Listening Time', value: '0 hrs' },
+    {
+      label: 'Albums',
+      value: isLoading ? '…' : error ? '—' : albums.length.toString(),
+    },
+    { label: 'Listening Time', value: '—' },
   ]
 
   return (
     <>
       {/* Dashboard page heading */}
-      <header className="page-header">
-        <span className="page-eyebrow">YOUR MUSIC</span>
-        <h1>Overview</h1>
-        <p className="page-description">
-          Your listening activity, all in one place.
-        </p>
-      </header>
+      <PageHeader
+        eyebrow="YOUR MUSIC"
+        title="Dashboard"
+        description="Your listening activity, all in one place."
+      />
 
       {/* Library statistics */}
       <section className="dashboard-stats">
@@ -63,30 +80,27 @@ function DashboardPage() {
         ))}
       </section>
 
+      {/* Dashboard loading error */}
+      {error && <p className="form-error">{error}</p>}
+
       {/* Recently played tracks section */}
       <section className="dashboard-section">
         <h2>Recently Played</h2>
-        <div className="dashboard-empty-state">
-          <span className="empty-state-icon">♫</span>
-          <h3>No listening history yet</h3>
-          <p>
-            Your recently played tracks will appear here once you start tracking
-            your listening activity.
-          </p>
-        </div>
+        <EmptyState
+          icon="♫"
+          title="No listening history yet"
+          description="Your recently played tracks will appear here once you start tracking your listening activity."
+        />
       </section>
 
       {/* Top artists section */}
       <section className="dashboard-section">
         <h2>Top Artists</h2>
-        <div className="dashboard-empty-state">
-          <span className="empty-state-icon">♪</span>
-          <h3>No listening data yet</h3>
-          <p>
-            Your most listened-to artists will appear here once you start
-            tracking your listening activity.
-          </p>
-        </div>
+        <EmptyState
+          icon="♪"
+          title="No listening data yet"
+          description="Your most listened-to artists will appear here once you start tracking your listening activity."
+        />
       </section>
     </>
   )

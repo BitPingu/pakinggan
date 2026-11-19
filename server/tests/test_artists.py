@@ -118,8 +118,8 @@ def test_delete_artist_not_found(client):
 
 
 # deleting an artist that has albums
-# verify that deleting an artist with associated albums triggers the
-# expected database error and rolls back the transaction
+# verify that deleting an artist with associated albums returns a conflict
+# and leaves the artist unchanged
 def test_delete_artist_with_albums(client, album):
     artist_id = album["artist_id"]
 

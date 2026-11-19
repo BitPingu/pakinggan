@@ -2,7 +2,7 @@ import { NavLink } from 'react-router-dom'
 
 // Defines the navigation items displayed in the sidebar.
 const navigationItems = [
-  { label: 'Overview', icon: '◫', path: '/' },
+  { label: 'Dashboard', icon: '◫', path: '/' },
   { label: 'Artists', icon: '♫', path: '/artists' },
   { label: 'Albums', icon: '▤', path: '/albums' },
   { label: 'Tracks', icon: '♪', path: '/tracks' },
@@ -22,7 +22,7 @@ function Sidebar() {
       <div className="sidebar-section">
         <p className="sidebar-heading">LIBRARY</p>
 
-        <nav className="sidebar-nav">
+        <nav className="sidebar-nav" aria-label="Main navigation">
           {navigationItems.map((item) => (
             <NavLink
               key={item.label}
@@ -32,7 +32,9 @@ function Sidebar() {
                 `nav-item ${isActive ? 'active' : ''}`
               }
             >
-              <span className="nav-icon">{item.icon}</span>
+              <span className="nav-icon" aria-hidden="true">
+                {item.icon}
+              </span>
               <span>{item.label}</span>
             </NavLink>
           ))}
