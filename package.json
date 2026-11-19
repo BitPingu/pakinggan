@@ -1,7 +1,14 @@
 {
+  "name": "pakinggan",
+  "private": true,
   "scripts": {
+    "dev": "npm --prefix client run dev",
     "format": "prettier --write .",
-    "format:check": "prettier --check ."
+    "format:check": "prettier --check .",
+    "lint": "npm --prefix client run lint && cd server && uv run ruff check .",
+    "build": "npm --prefix client run build",
+    "test": "cd server && uv run pytest",
+    "check": "npm run format:check && npm run lint && npm run build && npm run test"
   },
   "devDependencies": {
     "prettier": "^3.9.10"

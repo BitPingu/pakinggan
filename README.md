@@ -28,19 +28,27 @@ cd pakinggan
 
 ### 2. Configure the Backend
 
-```bash
-cd server
-```
-
-Create a `.env` file using `.env.example` as a template. Configure your database URL and JWT secret.
+Create a `server/.env` file using `server/.env.example` as a template. Configure your database URL and JWT secret.
 
 Install dependencies:
 
 ```bash
+cd server
 uv sync
 ```
 
-### 3. Start PostgreSQL
+### 3. Configure the Frontend
+
+Create a `client/.env` file using `client/.env.example` as a template.
+
+Install dependencies:
+
+```bash
+cd client
+npm install
+```
+
+### 4. Start PostgreSQL
 
 From the project root:
 
@@ -48,7 +56,7 @@ From the project root:
 docker compose up -d
 ```
 
-### 4. Run Database Migrations
+### 5. Run Database Migrations
 
 From the `server/` directory:
 
@@ -56,7 +64,7 @@ From the `server/` directory:
 uv run alembic upgrade head
 ```
 
-### 5. Start the Backend
+### 6. Start the Backend
 
 From the `server/` directory:
 
@@ -69,13 +77,12 @@ The API will be available at:
 - API: http://localhost:8000
 - API documentation: http://localhost:8000/docs
 
-### 6. Start the Frontend
+### 7. Start the Frontend
 
 Open a separate terminal:
 
 ```bash
 cd client
-npm install
 npm run dev
 ```
 
@@ -91,18 +98,21 @@ From the `server/` directory:
 uv run pytest
 ```
 
+Make sure PostgreSQL is running and the `pakinggan_test` database exists.
+
 ## Development Checks
 
-From the `client/` directory:
+From the project root:
 
 ```bash
+npm run format:check
 npm run lint
 npm run build
+npm run test
 ```
 
-From the `server/` directory:
+To run all checks together:
 
 ```bash
-uv run ruff check .
-uv run ruff format --check .
+npm run check
 ```

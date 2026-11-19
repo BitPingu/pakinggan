@@ -1,16 +1,31 @@
+# Define the services that make up the application.
 services:
+  # PostgreSQL database used by the backend.
   db:
+    # Use PostgreSQL 18 as the database image.
     image: postgres:18
+
+    # Assign a consistent name to the database container.
     container_name: pakinggan-db
+
+    # Automatically restart the container unless it is manually stopped.
     restart: unless-stopped
+
+    # Configure the PostgreSQL database and credentials.
     environment:
       POSTGRES_USER: pakinggan
       POSTGRES_PASSWORD: development
       POSTGRES_DB: pakinggan
+
+    # Expose PostgreSQL on localhost only.
     ports:
       - '127.0.0.1:5432:5432'
+
+    # Persist database files using a named Docker volume.
     volumes:
       - postgres_data:/var/lib/postgresql
 
+# Define persistent Docker volumes.
 volumes:
+  # Store PostgreSQL data between container restarts.
   postgres_data:

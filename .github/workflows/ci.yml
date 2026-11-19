@@ -10,34 +10,21 @@ on:
 permissions:
   contents: read
 
-# Define the jobs that make up the CI pipeline.
-# Backend and frontend jobs run independently and can execute in parallel.
 jobs:
-  # --------------------------------------------------
-  # Backend CI: FastAPI, PostgreSQL, Ruff, and pytest
-  # --------------------------------------------------
-  backend:
-    name: Backend Checks
-
-    # Run the job on a fresh Ubuntu virtual machine.
+  build:
+    name: Build
     runs-on: ubuntu-latest
 
     # Start a temporary PostgreSQL service for backend tests.
     services:
       postgres:
         image: postgres:18
-
-        # Configure the PostgreSQL database and credentials.
         env:
           POSTGRES_USER: pakinggan
           POSTGRES_PASSWORD: development
           POSTGRES_DB: pakinggan
-
-        # Expose PostgreSQL on the runner's localhost.
         ports:
           - 5432:5432
-
-        # Wait until PostgreSQL is ready before running the job.
         options: >-
           --health-cmd "pg_isready -U pakinggan -d pakinggan"
           --health-interval 10s
@@ -55,7 +42,17 @@ jobs:
       - name: Check out repository
         uses: actions/checkout@v4
 
-      # Install Python for the backend environment.
+      # Set up Node.js for frontend tooling.
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: |
+            package-lock.json
+            client/package-lock.json
+
+      # Set up Python for the backend.
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
@@ -65,8 +62,17 @@ jobs:
       - name: Install uv
         uses: astral-sh/setup-uv@v5
 
-      # Install project dependencies using the committed lockfile.
-      - name: Install dependencies
+      # Install root dependencies, including Prettier.
+      - name: Install root dependencies
+        run: npm ci
+
+      # Install frontend dependencies.
+      - name: Install frontend dependencies
+        working-directory: client
+        run: npm ci
+
+      # Install backend dependencies using the committed lockfile.
+      - name: Install backend dependencies
         working-directory: server
         run: uv sync --locked --dev
 
@@ -78,64 +84,6 @@ jobs:
             -U pakinggan \
             pakinggan_test
 
-      # Check Python code for linting issues.
-      - name: Run Ruff lint checks
-        working-directory: server
-        run: uv run ruff check .
-
-      # Verify Python files follow Ruff formatting rules.
-      - name: Check formatting
-        working-directory: server
-        run: uv run ruff format --check .
-
-      # Execute backend tests using pytest.
-      - name: Run tests
-        working-directory: server
-        run: uv run pytest -v
-
-  # --------------------------------------------------
-  # Frontend CI: React, TypeScript, ESLint, and Vite
-  # --------------------------------------------------
-  frontend:
-    name: Frontend Checks
-
-    # Run the job on a fresh Ubuntu virtual machine.
-    runs-on: ubuntu-latest
-
-    steps:
-      # Download the repository contents.
-      - name: Check out repository
-        uses: actions/checkout@v4
-
-      # Install Node.js for the frontend environment.
-      - name: Set up Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: 22
-
-          # Cache npm dependencies to speed up future workflow runs.
-          cache: npm
-          cache-dependency-path: client/package-lock.json
-
-      # Install exact dependencies from package-lock.json.
-      - name: Install root dependencies
-        run: npm ci
-
-      # Check formatting across the repository.
-      - name: Check formatting
-        run: npm run format:check
-
-      # Install frontend dependencies.
-      - name: Install frontend dependencies
-        working-directory: client
-        run: npm ci
-
-      # Check frontend code for linting issues.
-      - name: Run ESLint
-        working-directory: client
-        run: npm run lint
-
-      # Check TypeScript and create a production build with Vite.
-      - name: Build application
-        working-directory: client
-        run: npm run build
+      # Run formatting, linting, build, and backend tests.
+      - name: Run checks
+        run: npm run check
