@@ -1,0 +1,213 @@
+/* Library */
+
+.library-section {
+  margin-top: 40px;
+}
+
+.library-section-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 18px;
+}
+
+.library-section-header h2 {
+  margin: 0;
+  font-size: 20px;
+}
+
+.library-count {
+  color: #9696a2;
+  font-size: 13px;
+}
+
+.library-list {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  gap: 16px;
+}
+
+.library-list .stat-card h3 {
+  margin: 0;
+  font-size: 17px;
+}
+
+/* Library form */
+
+.library-form {
+  margin-bottom: 24px;
+}
+
+.library-form-controls {
+  display: flex;
+  gap: 12px;
+}
+
+.library-form input {
+  flex: 1;
+  min-width: 0;
+  padding: 12px 16px;
+  border: 1px solid #292930;
+  border-radius: 8px;
+  outline: none;
+  background: #17171d;
+  color: #f5f5f5;
+}
+
+.library-form input:focus {
+  border-color: #a78bfa;
+}
+
+.library-form input::placeholder {
+  color: #858590;
+}
+
+.library-form button {
+  padding: 12px 20px;
+  border: none;
+  border-radius: 8px;
+  background: #a78bfa;
+  color: #101014;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+.library-form button:hover:not(:disabled) {
+  background: #c4b5fd;
+}
+
+.library-form button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* Library edit form */
+
+.library-edit-form {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin-top: 0;
+}
+
+.library-edit-form input {
+  width: 100%;
+  min-width: 0;
+  padding: 10px 12px;
+  border: 1px solid #292930;
+  border-radius: 8px;
+  outline: none;
+  background: #101014;
+  color: #f5f5f5;
+}
+
+.library-edit-form input:focus {
+  border-color: #a78bfa;
+}
+
+.library-edit-form-actions {
+  display: flex;
+  gap: 8px;
+}
+
+.library-edit-form button {
+  padding: 9px 16px;
+  border: none;
+  border-radius: 8px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+/* Artist card buttons */
+
+.save-button {
+  background: #a78bfa;
+  color: #101014;
+}
+
+.save-button:hover:not(:disabled) {
+  background: #c4b5fd;
+}
+
+.cancel-button {
+  background: #292930;
+  color: #f5f5f5;
+}
+
+.cancel-button:hover:not(:disabled) {
+  background: #3a3a44;
+}
+
+.library-edit-form button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* Reduce card padding while editing an artist */
+
+.stat-card.editing {
+  padding: 16px;
+}
+
+/* Artist card buttons */
+
+.library-card-actions {
+  display: flex;
+  gap: 8px;
+  margin-top: 16px;
+}
+
+.edit-button,
+.delete-button {
+  padding: 9px 16px;
+  border: none;
+  border-radius: 8px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+.edit-button {
+  background: #a78bfa;
+  color: #101014;
+}
+
+.edit-button:hover {
+  background: #c4b5fd;
+}
+
+.delete-button {
+  background: #292930;
+  color: #f87171;
+}
+
+.delete-button:hover:not(:disabled) {
+  background: #3a292e;
+}
+
+.delete-button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* Form validation and API errors */
+
+.form-error {
+  margin: 8px 0 20px;
+  color: #f87171;
+  font-size: 13px;
+}
+
+/* Sidebar, page layouts, dashboard, artist cards, forms */
+
+@media (max-width: 600px) {
+  .library-form-controls {
+    flex-direction: column;
+  }
+
+  .library-form button {
+    width: 100%;
+  }
+}

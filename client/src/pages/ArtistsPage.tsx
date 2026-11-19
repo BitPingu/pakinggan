@@ -180,17 +180,17 @@ function ArtistsPage() {
         </p>
       </header>
 
-      <section className="artists-section">
-        <div className="artists-section-header">
+      <section className="library-section">
+        <div className="library-section-header">
           <h2>Your Artists</h2>
-          <span className="artists-count">
+          <span className="library-count">
             {artists.length} {artists.length === 1 ? 'artist' : 'artists'}
           </span>
         </div>
 
         {/* Form for creating a new artist */}
-        <form onSubmit={handleCreateArtist} className="artist-form">
-          <div className="artist-form-controls">
+        <form onSubmit={handleCreateArtist} className="library-form">
+          <div className="library-form-controls">
             <input
               type="text"
               placeholder="Enter artist name..."
@@ -235,7 +235,7 @@ function ArtistsPage() {
               </div>
             ) : (
               // Display the artist cards
-              <div className="artists-list">
+              <div className="library-list">
                 {artists.map((artist) => (
                   <div
                     className={`stat-card ${editingArtistId === artist.id ? 'editing' : ''}`}
@@ -245,7 +245,7 @@ function ArtistsPage() {
                     {editingArtistId === artist.id ? (
                       <form
                         onSubmit={handleUpdateArtist}
-                        className="artist-edit-form"
+                        className="library-edit-form"
                       >
                         <input
                           type="text"
@@ -256,7 +256,7 @@ function ArtistsPage() {
                           disabled={isUpdating}
                         />
 
-                        <div className="artist-edit-form-actions">
+                        <div className="library-edit-form-actions">
                           <button
                             type="submit"
                             className="save-button"
@@ -285,7 +285,7 @@ function ArtistsPage() {
                         <h3>{artist.name}</h3>
 
                         {/* Group the artist management buttons */}
-                        <div className="artist-card-actions">
+                        <div className="library-card-actions">
                           {/* Button to enter edit mode */}
                           <button
                             type="button"

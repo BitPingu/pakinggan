@@ -1,0 +1,39 @@
+/* Application layout */
+
+.app-layout {
+  min-height: 100vh;
+  background: #101014;
+  color: #f5f5f5;
+}
+
+.main-content {
+  min-height: 100vh;
+  margin-left: 240px;
+  padding: 48px;
+}
+
+/* Page headers */
+
+.page-header h1 {
+  margin: 8px 0;
+  font-size: 32px;
+}
+
+.page-eyebrow {
+  color: #a78bfa;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 1.5px;
+}
+
+.page-description {
+  color: #9696a2;
+}
+
+/* Responsive layout */
+
+@media (max-width: 600px) {
+  .main-content {
+    padding: 28px 20px;
+  }
+}

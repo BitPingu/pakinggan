@@ -8,138 +8,133 @@ from app.models.track import Track
 from app.schemas.album import AlbumCreate, AlbumResponse, AlbumUpdate
 from app.schemas.track import TrackResponse
 
-# album endpoints
+# Define the album API endpoints.
 router = APIRouter(
     prefix="/api/albums",
     tags=["Albums"],
 )
 
 
-# retrieve all albums
+# Retrieve all albums.
 @router.get("/", response_model=list[AlbumResponse])
 def get_albums(db: Session = Depends(get_db)):
     albums = db.query(Album).all()
     return albums
 
 
-# retrieve a single album
+# Retrieve a single album by ID.
 @router.get("/{album_id}", response_model=AlbumResponse)
 def get_album(album_id: int, db: Session = Depends(get_db)):
-    # retrieve the album
+    # Find the requested album.
     album = db.query(Album).filter(Album.id == album_id).first()
 
-    # handle missing albums
+    # Return a 404 error if the album does not exist.
     if album is None:
         raise HTTPException(
             status_code=404,
             detail="Album not found",
         )
 
-    # return the album
     return album
 
 
-# create an album
+# Create a new album.
 @router.post("/", response_model=AlbumResponse, status_code=201)
 def create_album(album: AlbumCreate, db: Session = Depends(get_db)):
-    # check whether artist exists
+    # Verify that the associated artist exists.
     db_artist = db.query(Artist).filter(Artist.id == album.artist_id).first()
 
-    # handle missing artists
+    # Return a 404 error if the artist does not exist.
     if db_artist is None:
         raise HTTPException(
             status_code=404,
             detail="Artist not found",
         )
 
-    # creates a new album object
+    # Create an album associated with the specified artist.
     db_album = Album(
         title=album.title,
         artist_id=album.artist_id,
     )
 
-    db.add(db_album)  # add it to the session
-    db.commit()  # commit the transaction
-    db.refresh(db_album)  # refresh the object
+    # Save the new album to the database.
+    db.add(db_album)
+    db.commit()
+    db.refresh(db_album)
 
-    # return in json
     return db_album
 
 
-# update an existing album
+# Update an existing album.
 @router.put("/{album_id}", response_model=AlbumResponse)
 def update_album(
     album_id: int,
     album: AlbumUpdate,
     db: Session = Depends(get_db),
 ):
-    # retrieve the album
+    # Find the album to update.
     db_album = db.query(Album).filter(Album.id == album_id).first()
 
-    # handle missing albums
+    # Return a 404 error if the album does not exist.
     if db_album is None:
         raise HTTPException(
             status_code=404,
             detail="Album not found",
         )
 
-    # check whether artist exists
+    # Verify that the new associated artist exists.
     db_artist = db.query(Artist).filter(Artist.id == album.artist_id).first()
 
-    # handle missing artists
+    # Return a 404 error if the artist does not exist.
     if db_artist is None:
         raise HTTPException(
             status_code=404,
             detail="Artist not found",
         )
 
-    # update the fields
+    # Update the album's title and associated artist.
     db_album.title = album.title
     db_album.artist_id = album.artist_id
 
-    # save the changes
+    # Save the updated album to the database.
     db.commit()
     db.refresh(db_album)
 
-    # return the updated album
     return db_album
 
 
-# delete an album
+# Delete an existing album.
 @router.delete("/{album_id}", status_code=204)
 def delete_album(album_id: int, db: Session = Depends(get_db)):
-    # retrieve the album
+    # Find the album to delete.
     db_album = db.query(Album).filter(Album.id == album_id).first()
 
-    # handle missing albums
+    # Return a 404 error if the album does not exist.
     if db_album is None:
         raise HTTPException(
             status_code=404,
             detail="Album not found",
         )
 
-    # mark the album for deletion
+    # Delete the album from the database.
     db.delete(db_album)
-
-    # save the changes
     db.commit()
 
 
-# retrieve an album's tracks
+# Retrieve all tracks belonging to an album.
 @router.get("/{album_id}/tracks", response_model=list[TrackResponse])
 def get_album_tracks(album_id: int, db: Session = Depends(get_db)):
-    # retrieve the album
+    # Find the requested album.
     db_album = db.query(Album).filter(Album.id == album_id).first()
 
-    # handle missing albums
+    # Return a 404 error if the album does not exist.
     if db_album is None:
         raise HTTPException(
             status_code=404,
             detail="Album not found",
         )
 
-    # retrieve the album's tracks
+    # Retrieve the tracks associated with the album.
     tracks = db.query(Track).filter(Track.album_id == album_id).all()
 
-    # return the tracks
     return tracks
