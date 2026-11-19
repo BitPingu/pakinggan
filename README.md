@@ -1,6 +1,14 @@
-# Pakinggan
+# pakinggan
 
-A music tracking application that helps users organize their music library, track listening activity, and discover their listening preferences.
+pakinggan is a music tracking application that helps users organize their music library, track listening activity, and discover their listening preferences.
+
+Inspired by my interest in music.
+
+## Features
+
+- User registration and authentication
+- Music library management for artists, albums, and tracks
+- Dashboard with an overview of your music library
 
 ## Tech Stack
 
@@ -113,7 +121,7 @@ All commands can be run from the project root using the root `package.json`.
 | `npm run test`         | Run backend tests                                |
 | `npm run check`        | Run formatting checks, linting, build, and tests |
 
-## Recommended Workflow
+### Recommended Workflow
 
 Run `npm run format` to format files when needed.
 
