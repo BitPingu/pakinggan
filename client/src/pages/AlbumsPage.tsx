@@ -6,6 +6,7 @@ import type { Album, Artist } from '../types/music'
 import PageHeader from '../components/common/PageHeader'
 import EmptyState from '../components/common/EmptyState'
 import LibrarySectionHeader from '../components/common/LibrarySectionHeader'
+import { Disc3, Pencil, Plus, Save, Trash2, X } from 'lucide-react'
 
 function AlbumsPage() {
   // Stores the albums returned by the backend.
@@ -235,6 +236,7 @@ function AlbumsPage() {
               type="submit"
               disabled={isCreating || !albumTitle.trim() || !selectedArtistId}
             >
+              <Plus size={16} strokeWidth={1.8} aria-hidden="true" />
               {isCreating ? 'Adding…' : 'Add Album'}
             </button>
           </div>
@@ -258,7 +260,7 @@ function AlbumsPage() {
           <EmptyState message={error} />
         ) : albums.length === 0 ? (
           <EmptyState
-            icon="♫"
+            icon={Disc3}
             title="No albums yet"
             description="Albums you add to your library will appear here."
           />
@@ -317,6 +319,11 @@ function AlbumsPage() {
                             !editedArtistId
                           }
                         >
+                          <Save
+                            size={16}
+                            strokeWidth={1.8}
+                            aria-hidden="true"
+                          />
                           {isUpdating ? 'Saving…' : 'Save'}
                         </button>
 
@@ -326,6 +333,7 @@ function AlbumsPage() {
                           onClick={handleCancelEdit}
                           disabled={isUpdating}
                         >
+                          <X size={16} strokeWidth={1.8} aria-hidden="true" />
                           Cancel
                         </button>
                       </div>
@@ -337,7 +345,9 @@ function AlbumsPage() {
                     <>
                       {/* Display the album title and artist */}
                       <h3>{album.title}</h3>
-                      <span>{artist?.name ?? 'Unknown artist'}</span>
+                      <span className="album-card-artist">
+                        {artist?.name ?? 'Unknown artist'}
+                      </span>
 
                       {/* Group the album management buttons */}
                       <div className="library-card-actions">
@@ -346,6 +356,11 @@ function AlbumsPage() {
                           className="edit-button"
                           onClick={() => handleEditClick(album)}
                         >
+                          <Pencil
+                            size={16}
+                            strokeWidth={1.8}
+                            aria-hidden="true"
+                          />
                           Edit
                         </button>
 
@@ -355,6 +370,11 @@ function AlbumsPage() {
                           onClick={() => handleDeleteAlbum(album)}
                           disabled={deletingAlbumId === album.id}
                         >
+                          <Trash2
+                            size={16}
+                            strokeWidth={1.8}
+                            aria-hidden="true"
+                          />
                           {deletingAlbumId === album.id
                             ? 'Deleting…'
                             : 'Delete'}

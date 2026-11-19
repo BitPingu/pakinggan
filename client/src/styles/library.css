@@ -14,11 +14,13 @@
 .library-section-header h2 {
   margin: 0;
   font-size: 20px;
+  font-weight: 600;
 }
 
 .library-count {
   color: #9696a2;
   font-size: 13px;
+  font-weight: 500;
 }
 
 .library-list {
@@ -30,6 +32,31 @@
 .library-list .stat-card h3 {
   margin: 0;
   font-size: 17px;
+  font-weight: 600;
+}
+
+.album-card-artist {
+  display: block;
+  margin-top: 8px;
+  color: #9696a2;
+  font-size: 13px;
+  font-weight: 400;
+}
+
+.artist-card-name {
+  margin: 0;
+  font-size: 16px;
+  font-weight: 500;
+}
+
+/* Prevent button text selection */
+
+.library-form button,
+.library-edit-form button,
+.edit-button,
+.delete-button {
+  -webkit-user-select: none;
+  user-select: none;
 }
 
 /* Library form */
@@ -85,6 +112,10 @@
 }
 
 .library-form button {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
   padding: 12px 20px;
   border: none;
   border-radius: 8px;
@@ -156,6 +187,10 @@
 }
 
 .library-edit-form button {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
   padding: 9px 16px;
   border: none;
   border-radius: 8px;
@@ -205,6 +240,10 @@
 
 .edit-button,
 .delete-button {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
   padding: 9px 16px;
   border: none;
   border-radius: 8px;

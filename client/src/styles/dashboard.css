@@ -15,9 +15,22 @@
   background: #17171d;
 }
 
-.stat-card span {
+.stat-card-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.stat-card-header span {
   color: #9696a2;
   font-size: 13px;
+  font-weight: 500;
+}
+
+.stat-card-header svg {
+  flex-shrink: 0;
+  color: #a78bfa;
 }
 
 .stat-card h2 {
@@ -33,6 +46,7 @@
 .dashboard-section h2 {
   margin-bottom: 18px;
   font-size: 20px;
+  font-weight: 600;
 }
 
 .empty-state {
@@ -51,7 +65,6 @@
 .empty-state-icon {
   margin-bottom: 14px;
   color: #a78bfa;
-  font-size: 30px;
 }
 
 .empty-state h3 {

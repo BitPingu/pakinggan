@@ -10,6 +10,7 @@ import type { Artist } from '../types/music'
 import PageHeader from '../components/common/PageHeader'
 import EmptyState from '../components/common/EmptyState'
 import LibrarySectionHeader from '../components/common/LibrarySectionHeader'
+import { Pencil, Plus, Save, Trash2, Users, X } from 'lucide-react'
 
 function ArtistsPage() {
   // Stores the artists returned by the backend.
@@ -210,6 +211,7 @@ function ArtistsPage() {
             />
 
             <button type="submit" disabled={isCreating || !artistName.trim()}>
+              <Plus size={16} strokeWidth={1.8} aria-hidden="true" />
               {isCreating ? 'Adding…' : 'Add Artist'}
             </button>
           </div>
@@ -235,7 +237,7 @@ function ArtistsPage() {
 
             {artists.length === 0 ? (
               <EmptyState
-                icon="♫"
+                icon={Users}
                 title="No artists yet"
                 description="Artists you add to your library will appear here."
               />
@@ -268,6 +270,11 @@ function ArtistsPage() {
                             className="save-button"
                             disabled={isUpdating || !editedArtistName.trim()}
                           >
+                            <Save
+                              size={16}
+                              strokeWidth={1.8}
+                              aria-hidden="true"
+                            />
                             {isUpdating ? 'Saving…' : 'Save'}
                           </button>
 
@@ -277,6 +284,7 @@ function ArtistsPage() {
                             onClick={handleCancelEdit}
                             disabled={isUpdating}
                           >
+                            <X size={16} strokeWidth={1.8} aria-hidden="true" />
                             Cancel
                           </button>
                         </div>
@@ -288,7 +296,7 @@ function ArtistsPage() {
                       // Show the artist name and edit button
                       <>
                         {/* Display the artist's name */}
-                        <h3>{artist.name}</h3>
+                        <h3 className="artist-card-name">{artist.name}</h3>
 
                         {/* Group the artist management buttons */}
                         <div className="library-card-actions">
@@ -298,16 +306,25 @@ function ArtistsPage() {
                             className="edit-button"
                             onClick={() => handleEditClick(artist)}
                           >
+                            <Pencil
+                              size={16}
+                              strokeWidth={1.8}
+                              aria-hidden="true"
+                            />
                             Edit
                           </button>
 
-                          {/* Button to delete the artist */}
                           <button
                             type="button"
                             className="delete-button"
                             onClick={() => handleDeleteArtist(artist)}
                             disabled={deletingArtistId === artist.id}
                           >
+                            <Trash2
+                              size={16}
+                              strokeWidth={1.8}
+                              aria-hidden="true"
+                            />
                             {deletingArtistId === artist.id
                               ? 'Deleting…'
                               : 'Delete'}

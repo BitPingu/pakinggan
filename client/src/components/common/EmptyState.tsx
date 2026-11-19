@@ -1,15 +1,29 @@
+import type { LucideIcon } from 'lucide-react'
+
 interface EmptyStateProps {
-  icon?: string
+  icon?: LucideIcon
   title?: string
   description?: string
   message?: string
 }
 
 // Displays a consistent empty, loading, or error state.
-function EmptyState({ icon, title, description, message }: EmptyStateProps) {
+function EmptyState({
+  icon: Icon,
+  title,
+  description,
+  message,
+}: EmptyStateProps) {
   return (
     <div className="empty-state">
-      {icon && <span className="empty-state-icon">{icon}</span>}
+      {Icon && (
+        <Icon
+          className="empty-state-icon"
+          size={30}
+          strokeWidth={1.8}
+          aria-hidden="true"
+        />
+      )}
       {title && <h3>{title}</h3>}
       {description && <p>{description}</p>}
       {message && <p>{message}</p>}
