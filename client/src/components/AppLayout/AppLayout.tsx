@@ -1,4 +1,4 @@
-import type { ReactNode } from 'react'
+import { useState, type ReactNode } from 'react'
 import Sidebar from '../Sidebar/Sidebar'
 import './AppLayout.css'
 
@@ -8,12 +8,25 @@ interface AppLayoutProps {
 
 // Provides the shared layout used across all application pages.
 function AppLayout({ children }: AppLayoutProps) {
-  return (
-    <div className="app-layout">
-      {/* Persistent sidebar navigation */}
-      <Sidebar />
+  const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(
+    () => localStorage.getItem('sidebar-collapsed') === 'true',
+  )
 
-      {/* Main content area for the active page */}
+  // Toggles the sidebar and saves the user's preference.
+  function toggleSidebar() {
+    setIsSidebarCollapsed((current) => {
+      const next = !current
+      localStorage.setItem('sidebar-collapsed', String(next))
+      return next
+    })
+  }
+
+  return (
+    <div
+      className={`app-layout ${isSidebarCollapsed ? 'sidebar-collapsed' : ''}`}
+    >
+      <Sidebar isCollapsed={isSidebarCollapsed} onToggle={toggleSidebar} />
+
       <main className="main-content">{children}</main>
     </div>
   )

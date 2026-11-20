@@ -8,6 +8,11 @@
   min-height: 100vh;
   margin-left: 240px;
   padding: 48px;
+  transition: margin-left 0.25s ease;
+}
+
+.app-layout.sidebar-collapsed .main-content {
+  margin-left: 84px;
 }
 
 /* Prevent decorative icon selection */

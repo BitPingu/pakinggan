@@ -1,4 +1,5 @@
 import {
+  Menu,
   Disc3,
   History,
   LayoutDashboard,
@@ -9,6 +10,11 @@ import {
 import { NavLink, useNavigate } from 'react-router-dom'
 import { useAuth } from '../../hooks/useAuth'
 import './Sidebar.css'
+
+interface SidebarProps {
+  isCollapsed: boolean
+  onToggle: () => void
+}
 
 // Defines the navigation sections displayed in the sidebar.
 const navigationSections = [
@@ -31,7 +37,7 @@ const navigationSections = [
 ]
 
 // Displays application navigation, branding, and the authenticated user's profile.
-function Sidebar() {
+function Sidebar({ isCollapsed, onToggle }: SidebarProps) {
   const { user, logout } = useAuth()
   const navigate = useNavigate()
 
@@ -42,13 +48,23 @@ function Sidebar() {
   }
 
   return (
-    <aside className="sidebar">
+    <aside className={`sidebar ${isCollapsed ? 'collapsed' : ''}`}>
       {/* Application branding */}
       <div className="sidebar-brand">
         <span className="brand-icon">
           <Music2 size={19} strokeWidth={2} aria-hidden="true" />
         </span>
         <span className="brand-name">pakinggan</span>
+        <button
+          className="sidebar-toggle"
+          type="button"
+          onClick={onToggle}
+          aria-label={isCollapsed ? 'Expand sidebar' : 'Collapse sidebar'}
+          aria-expanded={!isCollapsed}
+          title={isCollapsed ? 'Expand sidebar' : 'Collapse sidebar'}
+        >
+          <Menu size={18} aria-hidden="true" />
+        </button>
       </div>
 
       {/* Navigation */}
@@ -68,6 +84,8 @@ function Sidebar() {
                   className={({ isActive }) =>
                     `nav-item ${isActive ? 'active' : ''}`
                   }
+                  title={isCollapsed ? item.label : undefined}
+                  aria-label={isCollapsed ? item.label : undefined}
                 >
                   <Icon
                     className="nav-icon"
