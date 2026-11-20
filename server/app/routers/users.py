@@ -20,6 +20,7 @@ from app.models.user import User
 from app.schemas.user import (
     AccountDeletionRequest,
     ForgotPasswordRequest,
+    PasswordChangeRequest,
     PasswordResetRequest,
     PasswordResetResponse,
     TokenResponse,
@@ -195,3 +196,35 @@ def delete_account(
     # Deletes the account without affecting the shared music library.
     db.delete(current_user)
     db.commit()
+
+
+# Changes the authenticated user's password after verifying their current password.
+@router.put("/me/password", response_model=PasswordResetResponse)
+def change_password(
+    request: PasswordChangeRequest,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    # Verifies the current password before allowing the change.
+    if not verify_password(request.current_password, current_user.hashed_password):
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Incorrect password",
+        )
+
+    # Prevents changing the password to its existing value.
+    if verify_password(request.new_password, current_user.hashed_password):
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="New password must be different from the current password",
+        )
+
+    # Updates the password and invalidates existing access tokens.
+    current_user.hashed_password = hash_password(request.new_password)
+    current_user.password_reset_token_hash = None
+    current_user.password_reset_expires_at = None
+    current_user.token_version += 1
+
+    db.commit()
+
+    return {"message": "Your password has been changed successfully."}

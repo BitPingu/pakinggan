@@ -34,7 +34,7 @@
   border-color: #492b30;
 }
 
-.settings-danger > p {
+.settings-section > p {
   max-width: 620px;
   margin: -8px 0 24px;
   color: #9696a2;
@@ -42,20 +42,23 @@
   line-height: 1.6;
 }
 
-.settings-delete-form {
+.settings-delete-form,
+.settings-password-form {
   display: flex;
   flex-direction: column;
   align-items: flex-start;
   max-width: 400px;
 }
 
-.settings-delete-form label {
+.settings-delete-form label,
+.settings-password-form label {
   margin-bottom: 8px;
   font-size: 13px;
   font-weight: 500;
 }
 
-.settings-delete-form input {
+.settings-delete-form input,
+.settings-password-form input {
   width: 100%;
   margin-bottom: 20px;
   padding: 12px 14px;
@@ -66,7 +69,8 @@
   color: #f5f5f5;
 }
 
-.settings-delete-form input:focus {
+.settings-delete-form input:focus,
+.settings-password-form input:focus {
   border-color: #a78bfa;
 }
 
@@ -91,6 +95,31 @@
 }
 
 .settings-delete-form button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.settings-password-form button {
+  padding: 11px 16px;
+  border: 1px solid #3d3d4a;
+  border-radius: 8px;
+  background: #292933;
+  color: #f5f5f5;
+  font: inherit;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition:
+    background 0.2s,
+    border-color 0.2s;
+}
+
+.settings-password-form button:hover:not(:disabled) {
+  border-color: #555565;
+  background: #363642;
+}
+
+.settings-password-form button:disabled {
   opacity: 0.5;
   cursor: not-allowed;
 }

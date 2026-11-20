@@ -9,6 +9,10 @@ export interface AuthContextType {
   login: (username: string, password: string) => Promise<void> // Authenticates the user.
   register: (username: string, email: string, password: string) => Promise<void> // Registers a new user.
   deleteAccount: (password: string) => Promise<void> // Deletes the account and clears the session.
+  changePassword: (
+    currentPassword: string,
+    newPassword: string,
+  ) => Promise<void> // Changes the password of the authenticated user.
   logout: () => void // Clears the current authentication session.
 }
 

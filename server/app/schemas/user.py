@@ -46,6 +46,12 @@ class AccountDeletionRequest(BaseModel):
     password: str = Field(min_length=1, max_length=128)
 
 
+# Validates the current and new passwords submitted when changing a password.
+class PasswordChangeRequest(BaseModel):
+    current_password: str = Field(min_length=1, max_length=128)
+    new_password: str = Field(min_length=8, max_length=128)
+
+
 # Defines the response returned after successful authentication.
 class TokenResponse(BaseModel):
     access_token: str
