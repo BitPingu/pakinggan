@@ -181,8 +181,12 @@ function AlbumsPage() {
       setAlbums((currentAlbums) =>
         currentAlbums.filter((currentAlbum) => currentAlbum.id !== album.id),
       )
-    } catch {
-      setDeleteError('Unable to delete album. Please try again.')
+    } catch (error) {
+      setDeleteError(
+        error instanceof Error
+          ? error.message
+          : 'Unable to delete album. Please try again.',
+      )
     } finally {
       setDeletingAlbumId(null)
     }
@@ -235,7 +239,13 @@ function AlbumsPage() {
 
             <button
               type="submit"
-              disabled={isCreating || !albumTitle.trim() || !selectedArtistId}
+              disabled={
+                isCreating ||
+                isUpdating ||
+                deletingAlbumId !== null ||
+                !albumTitle.trim() ||
+                !selectedArtistId
+              }
             >
               <Plus size={16} strokeWidth={1.8} aria-hidden="true" />
               {isCreating ? 'Adding…' : 'Add Album'}
@@ -357,6 +367,7 @@ function AlbumsPage() {
                           type="button"
                           className="edit-button"
                           onClick={() => handleEditClick(album)}
+                          disabled={editingAlbumId !== null}
                         >
                           <Pencil
                             size={16}
@@ -370,7 +381,7 @@ function AlbumsPage() {
                           type="button"
                           className="delete-button"
                           onClick={() => handleDeleteAlbum(album)}
-                          disabled={deletingAlbumId !== null}
+                          disabled={deletingAlbumId !== null || isUpdating}
                         >
                           <Trash2
                             size={16}

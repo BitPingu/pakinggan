@@ -9,6 +9,7 @@ if TYPE_CHECKING:
     from app.models.album import Album
 
 
+# Represents an artist in the music library.
 class Artist(Base):
     __tablename__ = "artists"
 

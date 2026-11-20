@@ -10,6 +10,7 @@ if TYPE_CHECKING:
     from app.models.track import Track
 
 
+# Represents an album belonging to an artist.
 class Album(Base):
     __tablename__ = "albums"
 

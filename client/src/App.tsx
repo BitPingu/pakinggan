@@ -1,9 +1,11 @@
 import { Navigate, Outlet, Route, Routes } from 'react-router-dom'
 import AppLayout from './components/AppLayout/AppLayout'
+import EmptyState from './components/EmptyState/EmptyState'
 import { useAuth } from './hooks/useAuth'
 import DashboardPage from './pages/DashboardPage'
 import ArtistsPage from './pages/ArtistsPage'
 import AlbumsPage from './pages/AlbumsPage'
+import TracksPage from './pages/TracksPage'
 import LoginPage from './pages/LoginPage'
 import './App.css'
 
@@ -27,7 +29,7 @@ function App() {
   const { user, isLoading } = useAuth()
 
   if (isLoading) {
-    return <p>Loading...</p>
+    return <EmptyState message="Loading..." />
   }
 
   return (
@@ -43,6 +45,7 @@ function App() {
         <Route path="/" element={<DashboardPage />} />
         <Route path="/artists" element={<ArtistsPage />} />
         <Route path="/albums" element={<AlbumsPage />} />
+        <Route path="/tracks" element={<TracksPage />} />
       </Route>
 
       {/* Redirect unknown URLs */}

@@ -16,11 +16,11 @@ from app.schemas.user import (
     UserResponse,
 )
 
-# user endpoints
+# Defines the API endpoints for user registration and authentication.
 router = APIRouter(prefix="/api/users", tags=["Users"])
 
 
-# accept registration details
+# Registers a new user account.
 @router.post(
     "/",
     response_model=UserResponse,
@@ -33,7 +33,7 @@ def create_user(user: UserCreate, db: Session = Depends(get_db)):
         .first()
     )
 
-    # check whether the username or email is already registered
+    # Prevents registration with an existing username or email.
     if existing_user:
         raise HTTPException(
             status_code=status.HTTP_409_CONFLICT,
@@ -43,25 +43,23 @@ def create_user(user: UserCreate, db: Session = Depends(get_db)):
     db_user = User(
         username=user.username,
         email=str(user.email),
-        # hash the password
         hashed_password=hash_password(user.password),
     )
 
-    # save the new user to postgresql
+    # Saves the new user to the database.
     db.add(db_user)
     db.commit()
     db.refresh(db_user)
 
-    # return the created user's public info
     return db_user
 
 
-# login endpoint
+# Authenticates a user and returns an access token.
 @router.post("/login", response_model=TokenResponse)
 def login(user: UserLogin, db: Session = Depends(get_db)):
     db_user = db.query(User).filter(User.username == user.username).first()
 
-    # verify the submitted password against the stored hash
+    # Verifies the submitted password against the stored hash.
     if not db_user or not verify_password(user.password, db_user.hashed_password):
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
@@ -69,17 +67,16 @@ def login(user: UserLogin, db: Session = Depends(get_db)):
             headers={"WWW-Authenticate": "Bearer"},
         )
 
-    # generate a jwt using the user's database id
+    # Generates a JWT containing the user's database ID.
     access_token = create_access_token(subject=str(db_user.id))
 
-    # return the access token
     return {
         "access_token": access_token,
         "token_type": "bearer",
     }
 
 
-# let a logged-in user retrieve their own profile using their access token
+# Retrieves the authenticated user's profile.
 @router.get("/me", response_model=UserResponse)
 def get_me(current_user: User = Depends(get_current_user)):
     return current_user

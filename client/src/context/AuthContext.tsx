@@ -1,6 +1,7 @@
 import { useEffect, useState, type ReactNode } from 'react'
 import { getCurrentUser, loginUser } from '../api/auth'
 import type { User } from '../types/user'
+import { ApiError } from '../api/request'
 import { AuthContext } from './auth-context'
 
 // Provides authentication state and functions to the application.
@@ -34,9 +35,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           setToken(storedToken)
           setUser(currentUser)
         }
-      } catch {
-        // Removes the stored token if the session cannot be restored.
-        sessionStorage.removeItem('access_token')
+      } catch (error) {
+        // Removes the stored token only if the backend rejects the session.
+        if (
+          error instanceof ApiError &&
+          (error.status === 401 || error.status === 403)
+        ) {
+          sessionStorage.removeItem('access_token')
+        }
       } finally {
         // Finishes loading after the session restoration attempt.
         if (!cancelled) {

@@ -1,15 +1,9 @@
-import API_BASE_URL from './client'
+import { apiRequest, ApiError } from './request'
 import type { Album } from '../types/music'
 
 // Fetches all albums from the backend.
 export async function getAlbums(): Promise<Album[]> {
-  const response = await fetch(`${API_BASE_URL}/api/albums/`)
-
-  if (!response.ok) {
-    throw new Error('Failed to fetch albums')
-  }
-
-  return response.json()
+  return apiRequest<Album[]>('/api/albums/')
 }
 
 // Creates a new album through the backend.
@@ -17,19 +11,10 @@ export async function createAlbum(
   title: string,
   artistId: number,
 ): Promise<Album> {
-  const response = await fetch(`${API_BASE_URL}/api/albums/`, {
+  return apiRequest<Album>('/api/albums/', {
     method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-    },
     body: JSON.stringify({ title, artist_id: artistId }),
   })
-
-  if (!response.ok) {
-    throw new Error('Failed to create album')
-  }
-
-  return response.json()
 }
 
 // Updates an existing album through the backend.
@@ -38,28 +23,27 @@ export async function updateAlbum(
   title: string,
   artistId: number,
 ): Promise<Album> {
-  const response = await fetch(`${API_BASE_URL}/api/albums/${id}`, {
+  return apiRequest<Album>(`/api/albums/${id}`, {
     method: 'PUT',
-    headers: {
-      'Content-Type': 'application/json',
-    },
     body: JSON.stringify({ title, artist_id: artistId }),
   })
-
-  if (!response.ok) {
-    throw new Error('Failed to update album')
-  }
-
-  return response.json()
 }
 
 // Deletes an album through the backend.
 export async function deleteAlbum(id: number): Promise<void> {
-  const response = await fetch(`${API_BASE_URL}/api/albums/${id}`, {
-    method: 'DELETE',
-  })
+  try {
+    await apiRequest<void>(`/api/albums/${id}`, {
+      method: 'DELETE',
+    })
+  } catch (error) {
+    // Handle albums that still have associated tracks.
+    if (error instanceof ApiError && error.status === 409) {
+      throw new Error(
+        'Cannot delete this album because it has associated tracks. Delete or reassign its tracks first.',
+        { cause: error },
+      )
+    }
 
-  if (!response.ok) {
-    throw new Error('Failed to delete album')
+    throw error
   }
 }

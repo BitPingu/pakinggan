@@ -47,6 +47,14 @@ def test_get_artists(client, artist):
     assert response.json()[0]["name"] == artist["name"]
 
 
+# returns an empty list when no artists exist
+def test_get_artists_empty(client):
+    response = client.get("/api/artists/")
+
+    assert response.status_code == 200
+    assert response.json() == []
+
+
 # retrieving an existing artist
 def test_get_artist(client, artist):
     # verify correct artist
@@ -78,6 +86,41 @@ def test_update_artist(client, artist):
     assert response.status_code == 200
     assert response.json()["id"] == artist["id"]
     assert response.json()["name"] == "The Smile"
+
+
+# rejects an empty artist name during an update
+def test_update_artist_empty_name(client, artist):
+    response = client.put(
+        f"/api/artists/{artist['id']}",
+        json={"name": ""},
+    )
+
+    assert response.status_code == 422
+
+
+# rejects a whitespace-only artist name during an update
+def test_update_artist_whitespace_name(client, artist):
+    response = client.put(
+        f"/api/artists/{artist['id']}",
+        json={"name": "   "},
+    )
+
+    assert response.status_code == 422
+
+
+# verifies that an invalid update leaves the artist unchanged
+def test_update_artist_invalid_name_unchanged(client, artist):
+    response = client.put(
+        f"/api/artists/{artist['id']}",
+        json={"name": ""},
+    )
+
+    assert response.status_code == 422
+
+    get_response = client.get(f"/api/artists/{artist['id']}")
+
+    assert get_response.status_code == 200
+    assert get_response.json()["name"] == artist["name"]
 
 
 # updating an artist that doesn't exist

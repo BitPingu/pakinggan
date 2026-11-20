@@ -7,119 +7,104 @@ from app.models.artist import Artist
 from app.schemas.album import AlbumResponse
 from app.schemas.artist import ArtistCreate, ArtistResponse, ArtistUpdate
 
-# artist endpoints
+# Defines the API endpoints for managing artists.
 router = APIRouter(
     prefix="/api/artists",
     tags=["Artists"],
 )
 
 
-# retrieve all artists
+# Retrieves all artists.
 @router.get("/", response_model=list[ArtistResponse])
 def get_artists(db: Session = Depends(get_db)):
     artists = db.query(Artist).all()
     return artists
 
 
-# retrieve an individual artist
+# Retrieves a single artist by ID.
 @router.get("/{artist_id}", response_model=ArtistResponse)
 def get_artist(artist_id: int, db: Session = Depends(get_db)):
-    # retrieve the artist
     artist = db.query(Artist).filter(Artist.id == artist_id).first()
 
-    # handle missing artists
     if artist is None:
         raise HTTPException(
             status_code=404,
             detail="Artist not found",
         )
 
-    # return the artist
     return artist
 
 
-# create an artist
+# Creates a new artist.
 @router.post("/", response_model=ArtistResponse, status_code=201)
 def create_artist(artist: ArtistCreate, db: Session = Depends(get_db)):
-    db_artist = Artist(name=artist.name)  # creates a new artist object
+    db_artist = Artist(name=artist.name)
 
-    db.add(db_artist)  # add it to the session
-    db.commit()  # commit the transaction
-    db.refresh(db_artist)  # refresh the object
+    # Saves the new artist to the database.
+    db.add(db_artist)
+    db.commit()
+    db.refresh(db_artist)
 
-    return db_artist  # return in json
+    return db_artist
 
 
-# update an existing artist
+# Updates an existing artist.
 @router.put("/{artist_id}", response_model=ArtistResponse)
 def update_artist(
     artist_id: int,
     artist: ArtistUpdate,
     db: Session = Depends(get_db),
 ):
-    # retrieve the artist
     db_artist = db.query(Artist).filter(Artist.id == artist_id).first()
 
-    # handle missing artists
     if db_artist is None:
         raise HTTPException(
             status_code=404,
             detail="Artist not found",
         )
 
-    # update the field
     db_artist.name = artist.name
 
-    # save the changes
+    # Saves the updated artist to the database.
     db.commit()
     db.refresh(db_artist)
 
-    # return the updated artist
     return db_artist
 
 
-# delete an artist
+# Deletes an existing artist.
 @router.delete("/{artist_id}", status_code=204)
 def delete_artist(artist_id: int, db: Session = Depends(get_db)):
-    # retrieve the artist
     db_artist = db.query(Artist).filter(Artist.id == artist_id).first()
 
-    # handle missing artists
     if db_artist is None:
         raise HTTPException(
             status_code=404,
             detail="Artist not found",
         )
 
-    # artist with albums
+    # Prevents deletion while the artist has associated albums.
     if db_artist.albums:
         raise HTTPException(
             status_code=409,
             detail="Cannot delete an artist that has associated albums",
         )
 
-    # mark the artist for deletion
+    # Removes the artist from the database.
     db.delete(db_artist)
-
-    # save the changes
     db.commit()
 
 
-# retrieve an artist's albums
+# Retrieves all albums belonging to an artist.
 @router.get("/{artist_id}/albums", response_model=list[AlbumResponse])
 def get_artist_albums(artist_id: int, db: Session = Depends(get_db)):
-    # retrieve the artist
     db_artist = db.query(Artist).filter(Artist.id == artist_id).first()
 
-    # handle missing artists
     if db_artist is None:
         raise HTTPException(
             status_code=404,
             detail="Artist not found",
         )
 
-    # retrieve the artist's albums
     albums = db.query(Album).filter(Album.artist_id == artist_id).all()
-
-    # return the albums
     return albums

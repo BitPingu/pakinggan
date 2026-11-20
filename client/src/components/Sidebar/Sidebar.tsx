@@ -46,7 +46,7 @@ function Sidebar() {
       {/* Application branding */}
       <div className="sidebar-brand">
         <span className="brand-icon">
-          <Music2 size={19} strokeWidth={2} />
+          <Music2 size={19} strokeWidth={2} aria-hidden="true" />
         </span>
         <span className="brand-name">pakinggan</span>
       </div>
@@ -86,7 +86,7 @@ function Sidebar() {
       {/* User profile section */}
       <div className="sidebar-bottom">
         <div className="profile-avatar">
-          {user?.username.charAt(0).toUpperCase()}
+          {user?.username.charAt(0).toUpperCase() ?? '?'}
         </div>
         <div className="profile-info">
           <span>{user?.username}</span>
@@ -99,7 +99,7 @@ function Sidebar() {
           aria-label="Log out"
           title="Log out"
         >
-          <LogOut size={18} />
+          <LogOut size={18} aria-hidden="true" />
         </button>
       </div>
     </aside>

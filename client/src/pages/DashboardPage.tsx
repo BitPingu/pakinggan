@@ -1,7 +1,8 @@
 import { useEffect, useState } from 'react'
 import { getArtists } from '../api/artists'
 import { getAlbums } from '../api/albums'
-import type { Album, Artist } from '../types/music'
+import { getTracks } from '../api/tracks'
+import type { Album, Artist, Track } from '../types/music'
 import PageHeader from '../components/PageHeader/PageHeader'
 import EmptyState from '../components/EmptyState/EmptyState'
 import { Clock, Disc3, Music, Music2, Users } from 'lucide-react'
@@ -14,6 +15,9 @@ function DashboardPage() {
   // Stores the albums retrieved from the backend.
   const [albums, setAlbums] = useState<Album[]>([])
 
+  // Stores the tracks retrieved from the backend.
+  const [tracks, setTracks] = useState<Track[]>([])
+
   // Tracks whether dashboard data is still loading.
   const [isLoading, setIsLoading] = useState(true)
 
@@ -24,15 +28,17 @@ function DashboardPage() {
   useEffect(() => {
     async function fetchDashboardData() {
       try {
-        // Retrieve artists and albums concurrently.
-        const [artistData, albumData] = await Promise.all([
+        // Retrieve artists, albums, and tracks concurrently.
+        const [artistData, albumData, trackData] = await Promise.all([
           getArtists(),
           getAlbums(),
+          getTracks(),
         ])
 
         // Update the dashboard data.
         setArtists(artistData)
         setAlbums(albumData)
+        setTracks(trackData)
       } catch (error) {
         // Log the error for debugging.
         console.error('Unable to load dashboard data:', error)
@@ -50,7 +56,11 @@ function DashboardPage() {
 
   // Dashboard statistics displayed in the stat cards.
   const statistics = [
-    { label: 'Total Tracks', value: '—', icon: Music },
+    {
+      label: 'Total Tracks',
+      value: isLoading ? '…' : error ? '—' : tracks.length.toString(),
+      icon: Music,
+    },
     {
       label: 'Artists',
       value: isLoading ? '…' : error ? '—' : artists.length.toString(),

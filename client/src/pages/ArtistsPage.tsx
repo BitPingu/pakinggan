@@ -306,6 +306,7 @@ function ArtistsPage() {
                             type="button"
                             className="edit-button"
                             onClick={() => handleEditClick(artist)}
+                            disabled={editingArtistId !== null}
                           >
                             <Pencil
                               size={16}
@@ -319,7 +320,7 @@ function ArtistsPage() {
                             type="button"
                             className="delete-button"
                             onClick={() => handleDeleteArtist(artist)}
-                            disabled={deletingArtistId !== null}
+                            disabled={deletingArtistId !== null || isUpdating}
                           >
                             <Trash2
                               size={16}

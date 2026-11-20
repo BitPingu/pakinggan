@@ -1,6 +1,7 @@
 import { useState, type FormEvent } from 'react'
 import { Navigate, useNavigate } from 'react-router-dom'
 import { useAuth } from '../hooks/useAuth'
+import EmptyState from '../components/EmptyState/EmptyState'
 
 // Allows users to authenticate with their pakinggan account.
 function LoginPage() {
@@ -30,7 +31,7 @@ function LoginPage() {
   }
 
   if (isLoading) {
-    return <p>Loading...</p>
+    return <EmptyState message="Loading..." />
   }
 
   if (user) {
@@ -65,7 +66,10 @@ function LoginPage() {
 
         {error && <p className="form-error">{error}</p>}
 
-        <button type="submit" disabled={isSubmitting}>
+        <button
+          type="submit"
+          disabled={isSubmitting || !username.trim() || !password}
+        >
           {isSubmitting ? 'Logging in...' : 'Log in'}
         </button>
       </form>

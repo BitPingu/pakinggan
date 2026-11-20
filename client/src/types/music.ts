@@ -10,3 +10,11 @@ export interface Album {
   title: string
   artist_id: number
 }
+
+// Represents a track returned by the backend.
+export interface Track {
+  id: number
+  title: string
+  duration: number | null
+  album_id: number
+}

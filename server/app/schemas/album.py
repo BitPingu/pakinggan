@@ -6,7 +6,7 @@ class AlbumCreate(BaseModel):
     title: str = Field(min_length=1, max_length=255)
     artist_id: int = Field(gt=0)
 
-    # Remove surrounding whitespace and reject empty titles.
+    # Removes surrounding whitespace and ensures the title is not empty.
     @field_validator("title")
     @classmethod
     def validate_title(cls, value: str) -> str:
@@ -23,7 +23,7 @@ class AlbumUpdate(BaseModel):
     title: str = Field(min_length=1, max_length=255)
     artist_id: int = Field(gt=0)
 
-    # Remove surrounding whitespace and reject empty titles.
+    # Removes surrounding whitespace and ensures the title is not empty.
     @field_validator("title")
     @classmethod
     def validate_title(cls, value: str) -> str:
@@ -41,5 +41,5 @@ class AlbumResponse(BaseModel):
     title: str
     artist_id: int
 
-    # Allow the schema to read data from SQLAlchemy model attributes.
+    # Allows the schema to read data from SQLAlchemy model attributes.
     model_config = ConfigDict(from_attributes=True)

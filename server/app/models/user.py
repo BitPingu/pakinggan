@@ -4,6 +4,7 @@ from sqlalchemy.orm import Mapped, mapped_column
 from app.database import Base
 
 
+# Represents a registered user account.
 class User(Base):
     __tablename__ = "users"
 
