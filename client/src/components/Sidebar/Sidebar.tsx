@@ -5,6 +5,7 @@ import {
   LayoutDashboard,
   LogOut,
   Music2,
+  Settings,
   Users,
 } from 'lucide-react'
 import { NavLink, useNavigate } from 'react-router-dom'
@@ -114,19 +115,38 @@ function Sidebar({ isCollapsed, onToggle }: SidebarProps) {
         <div className="profile-avatar">
           {user?.username.charAt(0).toUpperCase() ?? '?'}
         </div>
+
         <div className="profile-info">
           <span>{user?.username}</span>
           <span className="profile-subtitle">Account</span>
         </div>
-        <button
-          className="profile-logout"
-          type="button"
-          onClick={handleLogout}
-          aria-label="Log out"
-          title="Log out"
-        >
-          <LogOut size={18} aria-hidden="true" />
-        </button>
+
+        <div className="profile-actions">
+          <button
+            className="profile-settings"
+            type="button"
+            onClick={() => navigate('/settings')}
+            aria-label="Account settings"
+            title="Account settings"
+          >
+            <Settings size={18} strokeWidth={2} aria-hidden="true" />
+          </button>
+
+          <button
+            className="profile-logout"
+            type="button"
+            onClick={handleLogout}
+            aria-label="Log out"
+            title="Log out"
+          >
+            <LogOut
+              className="profile-logout-icon"
+              size={18}
+              strokeWidth={2}
+              aria-hidden="true"
+            />
+          </button>
+        </div>
       </div>
     </aside>
   )

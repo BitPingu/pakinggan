@@ -8,6 +8,7 @@ export interface AuthContextType {
   isLoading: boolean // Indicates whether the initial session restoration is in progress.
   login: (username: string, password: string) => Promise<void> // Authenticates the user.
   register: (username: string, email: string, password: string) => Promise<void> // Registers a new user.
+  deleteAccount: (password: string) => Promise<void> // Deletes the account and clears the session.
   logout: () => void // Clears the current authentication session.
 }
 

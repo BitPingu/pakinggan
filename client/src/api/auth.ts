@@ -53,3 +53,15 @@ export async function resetPassword(
     body: JSON.stringify({ token, new_password: newPassword }),
   })
 }
+
+// Deletes the authenticated user's account after password confirmation.
+export async function deleteAccount(
+  token: string,
+  password: string,
+): Promise<void> {
+  return apiRequest<void>('/api/users/me', {
+    method: 'DELETE',
+    body: JSON.stringify({ password }),
+    token,
+  })
+}

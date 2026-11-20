@@ -18,6 +18,7 @@ from app.core.security import (
 from app.database import get_db
 from app.models.user import User
 from app.schemas.user import (
+    AccountDeletionRequest,
     ForgotPasswordRequest,
     PasswordResetRequest,
     PasswordResetResponse,
@@ -175,3 +176,22 @@ def reset_password(
 @router.get("/me", response_model=UserResponse)
 def get_me(current_user: User = Depends(get_current_user)):
     return current_user
+
+
+# Deletes the authenticated user's account after verifying their password.
+@router.delete("/me", status_code=status.HTTP_204_NO_CONTENT)
+def delete_account(
+    request: AccountDeletionRequest,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    # Requires the current password to confirm account ownership.
+    if not verify_password(request.password, current_user.hashed_password):
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Incorrect password",
+        )
+
+    # Deletes the account without affecting the shared music library.
+    db.delete(current_user)
+    db.commit()

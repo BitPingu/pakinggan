@@ -553,3 +553,100 @@ def test_reset_password_invalidates_access_token(client, user, db_session):
     )
 
     assert profile_response.status_code == 401
+
+
+# An authenticated user can delete their account with the correct password.
+def test_delete_account_success(client, user, db_session):
+    login_response = client.post(
+        "/api/users/login",
+        json={
+            "username": user["username"],
+            "password": "securepassword123",
+        },
+    )
+
+    token = login_response.json()["access_token"]
+
+    response = client.request(
+        "DELETE",
+        "/api/users/me",
+        json={"password": "securepassword123"},
+        headers={"Authorization": f"Bearer {token}"},
+    )
+
+    assert response.status_code == 204
+    assert response.content == b""
+
+    deleted_user = db_session.query(User).filter(User.id == user["id"]).first()
+
+    assert deleted_user is None
+
+
+# An incorrect password prevents account deletion.
+def test_delete_account_incorrect_password(client, user, db_session):
+    login_response = client.post(
+        "/api/users/login",
+        json={
+            "username": user["username"],
+            "password": "securepassword123",
+        },
+    )
+
+    token = login_response.json()["access_token"]
+
+    response = client.request(
+        "DELETE",
+        "/api/users/me",
+        json={"password": "wrongpassword"},
+        headers={"Authorization": f"Bearer {token}"},
+    )
+
+    assert response.status_code == 401
+    assert response.json()["detail"] == "Incorrect password"
+
+    existing_user = db_session.query(User).filter(User.id == user["id"]).first()
+
+    assert existing_user is not None
+
+
+# Account deletion requires authentication.
+def test_delete_account_unauthenticated(client, user):
+    response = client.request(
+        "DELETE",
+        "/api/users/me",
+        json={"password": "securepassword123"},
+    )
+
+    assert response.status_code == 401
+
+
+# A deleted account can no longer authenticate.
+def test_delete_account_cannot_login(client, user):
+    login_response = client.post(
+        "/api/users/login",
+        json={
+            "username": user["username"],
+            "password": "securepassword123",
+        },
+    )
+
+    token = login_response.json()["access_token"]
+
+    delete_response = client.request(
+        "DELETE",
+        "/api/users/me",
+        json={"password": "securepassword123"},
+        headers={"Authorization": f"Bearer {token}"},
+    )
+
+    assert delete_response.status_code == 204
+
+    login_response = client.post(
+        "/api/users/login",
+        json={
+            "username": user["username"],
+            "password": "securepassword123",
+        },
+    )
+
+    assert login_response.status_code == 401

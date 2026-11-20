@@ -155,9 +155,9 @@
 .sidebar-bottom {
   display: flex;
   align-items: center;
-  gap: 12px;
+  gap: 10px;
   margin-top: auto;
-  padding: 18px 10px 8px;
+  padding: 18px 6px 8px;
   border-top: 1px solid #292930;
 }
 
@@ -176,6 +176,7 @@
 
 .profile-info {
   display: flex;
+  flex: 1;
   flex-direction: column;
   min-width: 0;
   gap: 4px;
@@ -188,15 +189,58 @@
   font-size: 11px;
 }
 
-/* Profile logout button */
+.profile-actions {
+  display: flex;
+  flex-shrink: 0;
+  gap: 2px;
+}
 
-.profile-logout {
-  display: grid;
+/* Profile settings button */
+
+.profile-settings {
+  display: flex;
+  align-items: center;
+  justify-content: center;
   width: 34px;
   height: 34px;
   flex-shrink: 0;
-  margin-left: auto;
-  place-items: center;
+  margin: 0;
+  padding: 0;
+  border: none;
+  border-radius: 8px;
+  background: transparent;
+  color: #858590;
+  cursor: pointer;
+  transition:
+    background-color 0.2s ease,
+    color 0.2s ease;
+}
+
+.profile-settings:hover {
+  background: #292535;
+  color: #c4b5fd;
+}
+
+.profile-settings:focus-visible {
+  outline: 2px solid #a78bfa;
+  outline-offset: 2px;
+}
+
+/* Profile logout button */
+
+.profile-logout-icon {
+  transform: translateX(1px);
+}
+
+.profile-logout {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 34px;
+  height: 34px;
+  flex-shrink: 0;
+  margin: 0;
+  padding: 0;
   border: none;
   border-radius: 8px;
   background: transparent;
@@ -257,13 +301,17 @@
 .sidebar.collapsed .sidebar-bottom {
   align-items: center;
   flex-direction: column;
-  gap: 10px;
+  gap: 14px;
   padding: 18px 0 0;
 }
 
+.sidebar.collapsed .profile-settings,
 .sidebar.collapsed .profile-logout {
-  position: static;
   width: 36px;
   height: 36px;
-  margin: 0;
+}
+
+.sidebar.collapsed .profile-actions {
+  flex-direction: column;
+  gap: 6px;
 }

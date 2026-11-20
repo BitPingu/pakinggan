@@ -41,6 +41,11 @@ class UserLogin(BaseModel):
         return value.strip()
 
 
+# Validates the current password submitted when deleting an account.
+class AccountDeletionRequest(BaseModel):
+    password: str = Field(min_length=1, max_length=128)
+
+
 # Defines the response returned after successful authentication.
 class TokenResponse(BaseModel):
     access_token: str

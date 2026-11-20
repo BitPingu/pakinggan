@@ -1,5 +1,10 @@
 import { useEffect, useState, type ReactNode } from 'react'
-import { getCurrentUser, loginUser, registerUser } from '../api/auth'
+import {
+  deleteAccount as deleteAccountRequest,
+  getCurrentUser,
+  loginUser,
+  registerUser,
+} from '../api/auth'
 import type { User } from '../types/user'
 import { ApiError } from '../api/request'
 import { AuthContext } from './auth-context'
@@ -74,6 +79,16 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     await registerUser(username, email, password)
   }
 
+  // Deletes the account and clears the session after successful deletion.
+  async function deleteAccount(password: string) {
+    if (!token) {
+      throw new Error('No authenticated session found.')
+    }
+
+    await deleteAccountRequest(token, password)
+    logout()
+  }
+
   // Logs out the user and clears their stored session and authentication state.
   function logout() {
     sessionStorage.removeItem('access_token')
@@ -83,7 +98,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   return (
     <AuthContext.Provider
-      value={{ user, token, isLoading, login, register, logout }}
+      value={{
+        user,
+        token,
+        isLoading,
+        login,
+        register,
+        deleteAccount,
+        logout,
+      }}
     >
       {children}
     </AuthContext.Provider>
