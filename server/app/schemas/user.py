@@ -34,6 +34,12 @@ class UserLogin(BaseModel):
     username: str = Field(min_length=1, max_length=50)
     password: str = Field(min_length=1, max_length=128)
 
+    # Removes surrounding whitespace from the username.
+    @field_validator("username")
+    @classmethod
+    def validate_username(cls, value: str) -> str:
+        return value.strip()
+
 
 # Defines the response returned after successful authentication.
 class TokenResponse(BaseModel):

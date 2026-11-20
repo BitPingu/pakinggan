@@ -41,8 +41,16 @@ function Sidebar({ isCollapsed, onToggle }: SidebarProps) {
   const { user, logout } = useAuth()
   const navigate = useNavigate()
 
-  // Log out the user and return to the login page.
+  // Confirms logout before clearing the session.
   function handleLogout() {
+    const confirmed = window.confirm(
+      'Are you sure you want to log out of your account?',
+    )
+
+    if (!confirmed) {
+      return
+    }
+
     logout()
     navigate('/login', { replace: true })
   }
