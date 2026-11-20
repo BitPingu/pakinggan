@@ -5,6 +5,7 @@ import {
   loginUser,
   registerUser,
   changePassword as changePasswordRequest,
+  changeEmail as changeEmailRequest,
 } from '../api/auth'
 import type { User } from '../types/user'
 import { ApiError } from '../api/request'
@@ -100,6 +101,18 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     logout()
   }
 
+  // Changes the email and refreshes the authenticated user's profile.
+  async function changeEmail(email: string, currentPassword: string) {
+    if (!token) {
+      throw new Error('No authenticated session found.')
+    }
+
+    await changeEmailRequest(token, email, currentPassword)
+
+    const currentUser = await getCurrentUser(token)
+    setUser(currentUser)
+  }
+
   // Logs out the user and clears their stored session and authentication state.
   function logout() {
     sessionStorage.removeItem('access_token')
@@ -116,6 +129,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         login,
         register,
         changePassword,
+        changeEmail,
         deleteAccount,
         logout,
       }}

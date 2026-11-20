@@ -13,6 +13,7 @@ export interface AuthContextType {
     currentPassword: string,
     newPassword: string,
   ) => Promise<void> // Changes the password of the authenticated user.
+  changeEmail: (email: string, currentPassword: string) => Promise<void>
   logout: () => void // Clears the current authentication session.
 }
 

@@ -5,7 +5,7 @@ import { useAuth } from '../hooks/useAuth'
 
 // Displays account information and account management options.
 function SettingsPage() {
-  const { user, changePassword, deleteAccount } = useAuth()
+  const { user, changeEmail, changePassword, deleteAccount } = useAuth()
   const navigate = useNavigate()
 
   // Tracks the current password, submission status, and deletion errors.
@@ -19,6 +19,13 @@ function SettingsPage() {
   const [confirmPassword, setConfirmPassword] = useState('')
   const [passwordError, setPasswordError] = useState('')
   const [isChangingPassword, setIsChangingPassword] = useState(false)
+
+  // Tracks email-change inputs, submission status, and errors.
+  const [newEmail, setNewEmail] = useState('')
+  const [emailPassword, setEmailPassword] = useState('')
+  const [emailError, setEmailError] = useState('')
+  const [isChangingEmail, setIsChangingEmail] = useState(false)
+  const [emailSuccess, setEmailSuccess] = useState('')
 
   // Changes the password after validating the form inputs.
   async function handleChangePassword(event: FormEvent<HTMLFormElement>) {
@@ -43,6 +50,30 @@ function SettingsPage() {
       )
     } finally {
       setIsChangingPassword(false)
+    }
+  }
+
+  // Changes the email after validating the form inputs.
+  async function handleChangeEmail(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault()
+    setEmailError('')
+    setEmailSuccess('')
+
+    setIsChangingEmail(true)
+
+    try {
+      await changeEmail(newEmail, emailPassword)
+      setNewEmail('')
+      setEmailPassword('')
+      setEmailSuccess('Your email has been changed successfully.')
+    } catch (error) {
+      setEmailError(
+        error instanceof Error
+          ? error.message
+          : 'Unable to change your email. Please try again.',
+      )
+    } finally {
+      setIsChangingEmail(false)
     }
   }
 
@@ -100,64 +131,107 @@ function SettingsPage() {
         </div>
       </section>
 
-      {/* Password change */}
-      <section className="settings-section">
-        <h2>Change Password</h2>
-        <p>Update your password to keep your account secure.</p>
+      <div className="settings-grid">
+        {/* Email change */}
+        <section className="settings-section">
+          <h2>Change Email</h2>
+          <p>Update the email address associated with your account.</p>
 
-        <form
-          className="settings-password-form"
-          onSubmit={handleChangePassword}
-        >
-          <label htmlFor="change-current-password">Current Password</label>
-          <input
-            id="change-current-password"
-            type="password"
-            value={currentPassword}
-            onChange={(event) => setCurrentPassword(event.target.value)}
-            autoComplete="current-password"
-            required
-          />
+          <form className="settings-password-form" onSubmit={handleChangeEmail}>
+            <label htmlFor="new-email">New Email</label>
+            <input
+              id="new-email"
+              type="email"
+              value={newEmail}
+              onChange={(event) => setNewEmail(event.target.value)}
+              autoComplete="email"
+              maxLength={254}
+              required
+            />
 
-          <label htmlFor="new-password">New Password</label>
-          <input
-            id="new-password"
-            type="password"
-            value={newPassword}
-            onChange={(event) => setNewPassword(event.target.value)}
-            autoComplete="new-password"
-            minLength={8}
-            maxLength={128}
-            required
-          />
+            <label htmlFor="email-current-password">Current Password</label>
+            <input
+              id="email-current-password"
+              type="password"
+              value={emailPassword}
+              onChange={(event) => setEmailPassword(event.target.value)}
+              autoComplete="current-password"
+              required
+            />
 
-          <label htmlFor="confirm-password">Confirm New Password</label>
-          <input
-            id="confirm-password"
-            type="password"
-            value={confirmPassword}
-            onChange={(event) => setConfirmPassword(event.target.value)}
-            autoComplete="new-password"
-            minLength={8}
-            maxLength={128}
-            required
-          />
+            {emailError && <p className="form-error">{emailError}</p>}
 
-          {passwordError && <p className="form-error">{passwordError}</p>}
+            {/* Displays confirmation after a successful email change. */}
+            {emailSuccess && <p className="form-success">{emailSuccess}</p>}
 
-          <button
-            type="submit"
-            disabled={
-              isChangingPassword ||
-              !currentPassword ||
-              !newPassword ||
-              !confirmPassword
-            }
+            <button
+              type="submit"
+              disabled={isChangingEmail || !newEmail || !emailPassword}
+            >
+              {isChangingEmail ? 'Changing Email...' : 'Change Email'}
+            </button>
+          </form>
+        </section>
+
+        {/* Password change */}
+        <section className="settings-section">
+          <h2>Change Password</h2>
+          <p>Update your password to keep your account secure.</p>
+
+          <form
+            className="settings-password-form"
+            onSubmit={handleChangePassword}
           >
-            {isChangingPassword ? 'Changing Password...' : 'Change Password'}
-          </button>
-        </form>
-      </section>
+            <label htmlFor="change-current-password">Current Password</label>
+            <input
+              id="change-current-password"
+              type="password"
+              value={currentPassword}
+              onChange={(event) => setCurrentPassword(event.target.value)}
+              autoComplete="current-password"
+              required
+            />
+
+            <label htmlFor="new-password">New Password</label>
+            <input
+              id="new-password"
+              type="password"
+              value={newPassword}
+              onChange={(event) => setNewPassword(event.target.value)}
+              autoComplete="new-password"
+              minLength={8}
+              maxLength={128}
+              required
+            />
+
+            <label htmlFor="confirm-password">Confirm New Password</label>
+            <input
+              id="confirm-password"
+              type="password"
+              value={confirmPassword}
+              onChange={(event) => setConfirmPassword(event.target.value)}
+              autoComplete="new-password"
+              minLength={8}
+              maxLength={128}
+              required
+            />
+
+            {passwordError && <p className="form-error">{passwordError}</p>}
+
+            <button
+              type="submit"
+              disabled={
+                isChangingPassword ||
+                !currentPassword ||
+                !newPassword ||
+                !confirmPassword
+              }
+            >
+              {isChangingPassword ? 'Changing Password...' : 'Change Password'}
+            </button>
+          </form>
+        </section>
+      </div>
 
       {/* Account deletion */}
       <section className="settings-section settings-danger">

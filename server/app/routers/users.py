@@ -19,6 +19,7 @@ from app.database import get_db
 from app.models.user import User
 from app.schemas.user import (
     AccountDeletionRequest,
+    EmailChangeRequest,
     ForgotPasswordRequest,
     PasswordChangeRequest,
     PasswordResetRequest,
@@ -228,3 +229,45 @@ def change_password(
     db.commit()
 
     return {"message": "Your password has been changed successfully."}
+
+
+# Changes the authenticated user's email after verifying their current password.
+@router.put("/me/email", response_model=PasswordResetResponse)
+def change_email(
+    request: EmailChangeRequest,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    # Verifies the current password before allowing the change.
+    if not verify_password(request.current_password, current_user.hashed_password):
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Incorrect password",
+        )
+
+    new_email = str(request.email)
+
+    # Prevents changing the email to its existing value.
+    if new_email == current_user.email:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="New email must be different from the current email",
+        )
+
+    # Prevents changing to an email already registered to another account.
+    existing_user = db.query(User).filter(User.email == new_email).first()
+
+    if existing_user:
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail="Email already registered",
+        )
+
+    # Updates the email and invalidates any outstanding password-reset token.
+    current_user.email = new_email
+    current_user.password_reset_token_hash = None
+    current_user.password_reset_expires_at = None
+
+    db.commit()
+
+    return {"message": "Your email has been changed successfully."}

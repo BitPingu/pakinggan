@@ -895,3 +895,212 @@ def test_change_password_invalidates_reset_token(client, user, db_session):
     )
 
     assert reset_response.status_code == 400
+
+
+# An authenticated user can change their email with the correct password.
+def test_change_email_success(client, user, db_session):
+    login_response = client.post(
+        "/api/users/login",
+        json={
+            "username": user["username"],
+            "password": "securepassword123",
+        },
+    )
+
+    token = login_response.json()["access_token"]
+
+    response = client.put(
+        "/api/users/me/email",
+        json={
+            "email": "newemail@example.com",
+            "current_password": "securepassword123",
+        },
+        headers={"Authorization": f"Bearer {token}"},
+    )
+
+    assert response.status_code == 200
+    assert response.json() == {"message": "Your email has been changed successfully."}
+
+    user_record = db_session.query(User).filter(User.id == user["id"]).first()
+
+    assert user_record.email == "newemail@example.com"
+    assert user_record.token_version == 0
+
+
+# An incorrect current password prevents an email change.
+def test_change_email_incorrect_password(client, user, db_session):
+    login_response = client.post(
+        "/api/users/login",
+        json={
+            "username": user["username"],
+            "password": "securepassword123",
+        },
+    )
+
+    token = login_response.json()["access_token"]
+
+    response = client.put(
+        "/api/users/me/email",
+        json={
+            "email": "newemail@example.com",
+            "current_password": "wrongpassword",
+        },
+        headers={"Authorization": f"Bearer {token}"},
+    )
+
+    assert response.status_code == 401
+    assert response.json()["detail"] == "Incorrect password"
+
+    user_record = db_session.query(User).filter(User.id == user["id"]).first()
+
+    assert user_record.email == user["email"]
+
+
+# A user cannot change their email to its existing value.
+def test_change_email_same_email(client, user):
+    login_response = client.post(
+        "/api/users/login",
+        json={
+            "username": user["username"],
+            "password": "securepassword123",
+        },
+    )
+
+    token = login_response.json()["access_token"]
+
+    response = client.put(
+        "/api/users/me/email",
+        json={
+            "email": user["email"],
+            "current_password": "securepassword123",
+        },
+        headers={"Authorization": f"Bearer {token}"},
+    )
+
+    assert response.status_code == 400
+    assert response.json()["detail"] == (
+        "New email must be different from the current email"
+    )
+
+
+# A user cannot change their email to one already registered.
+def test_change_email_duplicate_email(client, user, db_session):
+    client.post(
+        "/api/users/",
+        json={
+            "username": "another_user",
+            "email": "existing@example.com",
+            "password": "securepassword123",
+        },
+    )
+
+    login_response = client.post(
+        "/api/users/login",
+        json={
+            "username": user["username"],
+            "password": "securepassword123",
+        },
+    )
+
+    token = login_response.json()["access_token"]
+
+    response = client.put(
+        "/api/users/me/email",
+        json={
+            "email": "existing@example.com",
+            "current_password": "securepassword123",
+        },
+        headers={"Authorization": f"Bearer {token}"},
+    )
+
+    assert response.status_code == 409
+    assert response.json()["detail"] == "Email already registered"
+
+    user_record = db_session.query(User).filter(User.id == user["id"]).first()
+
+    assert user_record.email == user["email"]
+
+
+# Email changes require authentication.
+def test_change_email_unauthenticated(client):
+    response = client.put(
+        "/api/users/me/email",
+        json={
+            "email": "newemail@example.com",
+            "current_password": "securepassword123",
+        },
+    )
+
+    assert response.status_code == 401
+
+
+# Invalid email addresses are rejected.
+def test_change_email_invalid_email(client, user):
+    login_response = client.post(
+        "/api/users/login",
+        json={
+            "username": user["username"],
+            "password": "securepassword123",
+        },
+    )
+
+    token = login_response.json()["access_token"]
+
+    response = client.put(
+        "/api/users/me/email",
+        json={
+            "email": "not-an-email",
+            "current_password": "securepassword123",
+        },
+        headers={"Authorization": f"Bearer {token}"},
+    )
+
+    assert response.status_code == 422
+
+
+# Changing an email invalidates any outstanding password-reset token.
+def test_change_email_invalidates_reset_token(client, user, db_session):
+    token = "outstanding-reset-token"
+
+    user_record = db_session.query(User).filter(User.id == user["id"]).first()
+    user_record.password_reset_token_hash = hash_password_reset_token(token)
+    user_record.password_reset_expires_at = datetime.now(timezone.utc) + timedelta(
+        minutes=30
+    )
+    db_session.commit()
+
+    login_response = client.post(
+        "/api/users/login",
+        json={
+            "username": user["username"],
+            "password": "securepassword123",
+        },
+    )
+
+    access_token = login_response.json()["access_token"]
+
+    response = client.put(
+        "/api/users/me/email",
+        json={
+            "email": "newemail@example.com",
+            "current_password": "securepassword123",
+        },
+        headers={"Authorization": f"Bearer {access_token}"},
+    )
+
+    assert response.status_code == 200
+
+    db_session.refresh(user_record)
+
+    assert user_record.password_reset_token_hash is None
+    assert user_record.password_reset_expires_at is None
+
+    reset_response = client.post(
+        "/api/users/reset-password",
+        json={
+            "token": token,
+            "new_password": "anothersecurepassword123",
+        },
+    )
+
+    assert reset_response.status_code == 400

@@ -52,6 +52,12 @@ class PasswordChangeRequest(BaseModel):
     new_password: str = Field(min_length=8, max_length=128)
 
 
+# Validates the new email and current password submitted when changing an email.
+class EmailChangeRequest(BaseModel):
+    email: EmailStr
+    current_password: str = Field(min_length=1, max_length=128)
+
+
 # Defines the response returned after successful authentication.
 class TokenResponse(BaseModel):
     access_token: str

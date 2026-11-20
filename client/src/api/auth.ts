@@ -70,6 +70,22 @@ export async function changePassword(
   })
 }
 
+// Changes the authenticated user's email after verifying their current password.
+export async function changeEmail(
+  token: string,
+  email: string,
+  currentPassword: string,
+): Promise<PasswordResetResponse> {
+  return apiRequest<PasswordResetResponse>('/api/users/me/email', {
+    method: 'PUT',
+    body: JSON.stringify({
+      email,
+      current_password: currentPassword,
+    }),
+    token,
+  })
+}
+
 // Deletes the authenticated user's account after password confirmation.
 export async function deleteAccount(
   token: string,
