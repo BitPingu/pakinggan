@@ -7,6 +7,7 @@ Inspired by my interest in music.
 ## Features
 
 - User registration and authentication
+- Forgot-password and password-reset functionality
 - Music library management for artists, albums, and tracks
 - Dashboard with an overview of your music library
 
@@ -65,7 +66,7 @@ cd client
 npm install
 ```
 
-### 4. Start PostgreSQL
+### 4. Start PostgreSQL and Mailpit
 
 From the project root:
 
@@ -73,7 +74,35 @@ From the project root:
 docker compose up -d
 ```
 
-### 5. Run Database Migrations
+This starts PostgreSQL and Mailpit.
+
+Mailpit captures outgoing emails during local development, allowing you to test password-reset emails without sending messages to real inboxes.
+
+The Mailpit web interface is available at:
+
+[http://localhost:8025](http://localhost:8025)
+
+### 5. Configure Email Delivery
+
+The backend uses SMTP to send password-reset emails. The default configuration is set up for local Mailpit development.
+
+The following settings can be configured in `server/.env`:
+
+| Variable          | Default                   | Description                                        |
+| ----------------- | ------------------------- | -------------------------------------------------- |
+| `FRONTEND_URL`    | `http://localhost:5173`   | Frontend URL used to generate password-reset links |
+| `SMTP_HOST`       | `localhost`               | SMTP server hostname                               |
+| `SMTP_PORT`       | `1025`                    | SMTP server port                                   |
+| `SMTP_USERNAME`   | None                      | SMTP authentication username                       |
+| `SMTP_PASSWORD`   | None                      | SMTP authentication password                       |
+| `SMTP_FROM_EMAIL` | `noreply@pakinggan.local` | Sender email address                               |
+| `SMTP_USE_TLS`    | `false`                   | Whether to use STARTTLS                            |
+
+For local development, the default settings work with Mailpit.
+
+For production, configure these variables with credentials and connection details from a real SMTP email provider. Do not use Mailpit as a production email service.
+
+### 6. Run Database Migrations
 
 From the `server/` directory:
 
@@ -81,7 +110,7 @@ From the `server/` directory:
 uv run alembic upgrade head
 ```
 
-### 6. Access the Database
+### 7. Access the Database
 
 PostgreSQL runs in Docker. To access the database interactively, run the following command from the project root:
 
@@ -91,17 +120,17 @@ docker exec -it pakinggan-db psql -U pakinggan -d pakinggan
 
 Once connected, you can execute SQL queries directly. For example, to view registered users:
 
-```bash
+```sql
 SELECT id, username, email FROM users;
 ```
 
 To exit the PostgreSQL terminal:
 
-```bash
+```text
 \q
 ```
 
-### 7. Start the Backend
+### 8. Start the Backend
 
 From the `server/` directory:
 
@@ -111,10 +140,10 @@ uv run fastapi dev app/main.py
 
 The API will be available at:
 
-- API: http://localhost:8000
-- API documentation: http://localhost:8000/docs
+- API: [http://localhost:8000](http://localhost:8000)
+- API documentation: [http://localhost:8000/docs](http://localhost:8000/docs)
 
-### 8. Start the Frontend
+### 9. Start the Frontend
 
 Open a separate terminal:
 
@@ -125,7 +154,7 @@ npm run dev
 
 The frontend will be available at:
 
-http://localhost:5173
+[http://localhost:5173](http://localhost:5173)
 
 ## Scripts
 
@@ -134,7 +163,7 @@ All commands can be run from the project root using the root `package.json`.
 | Command                | Description                                      |
 | ---------------------- | ------------------------------------------------ |
 | `npm run dev`          | Start the frontend development server            |
-| `npm run format`       | Format project files with Prettier               |
+| `npm run format`       | Format project files with Prettier and Ruff      |
 | `npm run format:check` | Check formatting without modifying files         |
 | `npm run lint`         | Run ESLint and Ruff                              |
 | `npm run build`        | Build the frontend for production                |
