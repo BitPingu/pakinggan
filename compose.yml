@@ -25,6 +25,21 @@ services:
     volumes:
       - postgres_data:/var/lib/postgresql
 
+  # Mailpit captures outgoing emails during local development.
+  mailpit:
+    image: axllent/mailpit:latest
+
+    # Assign a consistent name to the Mailpit container.
+    container_name: pakinggan-mailpit
+
+    # Automatically restart the container unless it is manually stopped.
+    restart: unless-stopped
+
+    # Expose the SMTP server and web interface on localhost only.
+    ports:
+      - '127.0.0.1:1025:1025'
+      - '127.0.0.1:8025:8025'
+
 # Define persistent Docker volumes.
 volumes:
   # Store PostgreSQL data between container restarts.

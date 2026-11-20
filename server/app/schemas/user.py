@@ -45,3 +45,19 @@ class UserLogin(BaseModel):
 class TokenResponse(BaseModel):
     access_token: str
     token_type: str = "bearer"
+
+
+# Validates the email submitted when requesting a password reset.
+class ForgotPasswordRequest(BaseModel):
+    email: EmailStr
+
+
+# Validates the token and new password submitted during a password reset.
+class PasswordResetRequest(BaseModel):
+    token: str = Field(min_length=1, max_length=255)
+    new_password: str = Field(min_length=8, max_length=128)
+
+
+# Defines the generic response returned by password recovery endpoints.
+class PasswordResetResponse(BaseModel):
+    message: str
