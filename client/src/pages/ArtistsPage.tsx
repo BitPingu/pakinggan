@@ -1,11 +1,6 @@
-import { useEffect, useState } from 'react'
+import { useState } from 'react'
 import type { SubmitEvent } from 'react'
-import {
-  createArtist,
-  deleteArtist,
-  getArtists,
-  updateArtist,
-} from '../api/artists'
+import { useLibrary } from '../hooks/useLibrary'
 import type { Artist } from '../types/music'
 import PageHeader from '../components/PageHeader/PageHeader'
 import EmptyState from '../components/EmptyState/EmptyState'
@@ -14,14 +9,8 @@ import { Pencil, Plus, Save, Trash2, Users, X } from 'lucide-react'
 
 // Displays and manages the artists in the user's music library.
 function ArtistsPage() {
-  // Stores the artists returned by the backend.
-  const [artists, setArtists] = useState<Artist[]>([])
-
-  // Tracks whether the initial artist list is loading.
-  const [isLoading, setIsLoading] = useState(true)
-
-  // Stores any error that occurs while fetching artists.
-  const [error, setError] = useState<string | null>(null)
+  const { artists, isLoading, error, addArtist, editArtist, removeArtist } =
+    useLibrary()
 
   // Stores the name entered when creating a new artist.
   const [artistName, setArtistName] = useState('')
@@ -50,26 +39,6 @@ function ArtistsPage() {
   // Stores any error that occurs while deleting an artist.
   const [deleteError, setDeleteError] = useState<string | null>(null)
 
-  // Fetches the artist list when the page first loads.
-  useEffect(() => {
-    async function fetchArtists() {
-      try {
-        // Retrieve artists from the backend.
-        const data = await getArtists()
-
-        // Update the artist list.
-        setArtists(data)
-      } catch {
-        setError('Unable to load artists. Please try again later.')
-      } finally {
-        // Stop displaying the loading state.
-        setIsLoading(false)
-      }
-    }
-
-    fetchArtists()
-  }, [])
-
   // Creates a new artist through the backend.
   async function handleCreateArtist(event: SubmitEvent<HTMLFormElement>) {
     event.preventDefault()
@@ -84,11 +53,8 @@ function ArtistsPage() {
     setCreateError(null)
 
     try {
-      // Send the new artist name to the backend.
-      const newArtist = await createArtist(trimmedName)
-
-      // Add the newly created artist to the existing list.
-      setArtists((currentArtists) => [...currentArtists, newArtist])
+      // Add the new artist to the shared collection.
+      await addArtist(trimmedName)
 
       // Clear the input after successful creation.
       setArtistName('')
@@ -127,15 +93,8 @@ function ArtistsPage() {
     setEditError(null)
 
     try {
-      // Send the updated name to the backend.
-      const updatedArtist = await updateArtist(editingArtistId, trimmedName)
-
-      // Replace the old artist with the updated artist in the list.
-      setArtists((currentArtists) =>
-        currentArtists.map((artist) =>
-          artist.id === updatedArtist.id ? updatedArtist : artist,
-        ),
-      )
+      // Update the artist in the shared collection.
+      await editArtist(editingArtistId, trimmedName)
 
       // Exit edit mode after a successful update.
       handleCancelEdit()
@@ -159,15 +118,8 @@ function ArtistsPage() {
     setDeleteError(null)
 
     try {
-      // Send the delete request to the backend.
-      await deleteArtist(artist.id)
-
-      // Remove the deleted artist from the frontend list.
-      setArtists((currentArtists) =>
-        currentArtists.filter(
-          (currentArtist) => currentArtist.id !== artist.id,
-        ),
-      )
+      // Remove the artist from the shared collection.
+      await removeArtist(artist.id)
     } catch (error) {
       setDeleteError(
         error instanceof Error

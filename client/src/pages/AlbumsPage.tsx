@@ -1,8 +1,7 @@
-import { useEffect, useState } from 'react'
+import { useState } from 'react'
 import type { SubmitEvent } from 'react'
-import { createAlbum, deleteAlbum, getAlbums, updateAlbum } from '../api/albums'
-import { getArtists } from '../api/artists'
-import type { Album, Artist } from '../types/music'
+import { useLibrary } from '../hooks/useLibrary'
+import type { Album } from '../types/music'
 import PageHeader from '../components/PageHeader/PageHeader'
 import EmptyState from '../components/EmptyState/EmptyState'
 import LibrarySectionHeader from '../components/LibrarySectionHeader/LibrarySectionHeader'
@@ -10,17 +9,15 @@ import { Disc3, Pencil, Plus, Save, Trash2, X } from 'lucide-react'
 
 // Displays and manages the albums in the user's music library.
 function AlbumsPage() {
-  // Stores the albums returned by the backend.
-  const [albums, setAlbums] = useState<Album[]>([])
-
-  // Stores the artists used to associate albums with their artists.
-  const [artists, setArtists] = useState<Artist[]>([])
-
-  // Tracks whether the initial data is loading.
-  const [isLoading, setIsLoading] = useState(true)
-
-  // Stores any error that occurs while fetching albums or artists.
-  const [error, setError] = useState<string | null>(null)
+  const {
+    albums,
+    artists,
+    isLoading,
+    error,
+    addAlbum,
+    editAlbum,
+    removeAlbum,
+  } = useLibrary()
 
   // Stores the album title entered when creating a new album.
   const [albumTitle, setAlbumTitle] = useState('')
@@ -55,29 +52,6 @@ function AlbumsPage() {
   // Stores any error that occurs while deleting an album.
   const [deleteError, setDeleteError] = useState<string | null>(null)
 
-  // Fetches albums and artists when the page first loads.
-  useEffect(() => {
-    async function fetchLibrary() {
-      try {
-        // Retrieve both lists from the backend.
-        const [albumData, artistData] = await Promise.all([
-          getAlbums(),
-          getArtists(),
-        ])
-
-        // Save the returned data in React state.
-        setAlbums(albumData)
-        setArtists(artistData)
-      } catch {
-        setError('Unable to load albums. Please try again later.')
-      } finally {
-        setIsLoading(false)
-      }
-    }
-
-    fetchLibrary()
-  }, [])
-
   // Creates a new album through the backend.
   async function handleCreateAlbum(event: SubmitEvent<HTMLFormElement>) {
     event.preventDefault()
@@ -92,11 +66,8 @@ function AlbumsPage() {
     setCreateError(null)
 
     try {
-      // Send the album title and artist ID to the backend.
-      const newAlbum = await createAlbum(trimmedTitle, Number(selectedArtistId))
-
-      // Add the newly created album to the existing list.
-      setAlbums((currentAlbums) => [...currentAlbums, newAlbum])
+      // Add the new album to the shared collection.
+      await addAlbum(trimmedTitle, Number(selectedArtistId))
 
       // Clear the form after successful creation.
       setAlbumTitle('')
@@ -138,19 +109,8 @@ function AlbumsPage() {
     setEditError(null)
 
     try {
-      // Send the updated title and artist ID to the backend.
-      const updatedAlbum = await updateAlbum(
-        editingAlbumId,
-        trimmedTitle,
-        Number(editedArtistId),
-      )
-
-      // Replace the old album with the updated album in the list.
-      setAlbums((currentAlbums) =>
-        currentAlbums.map((album) =>
-          album.id === updatedAlbum.id ? updatedAlbum : album,
-        ),
-      )
+      // Update the album in the shared collection.
+      await editAlbum(editingAlbumId, trimmedTitle, Number(editedArtistId))
 
       // Exit edit mode after a successful update.
       handleCancelEdit()
@@ -174,13 +134,8 @@ function AlbumsPage() {
     setDeleteError(null)
 
     try {
-      // Send the delete request to the backend.
-      await deleteAlbum(album.id)
-
-      // Remove the deleted album from the frontend list.
-      setAlbums((currentAlbums) =>
-        currentAlbums.filter((currentAlbum) => currentAlbum.id !== album.id),
-      )
+      // Remove the album from the shared collection.
+      await removeAlbum(album.id)
     } catch (error) {
       setDeleteError(
         error instanceof Error

@@ -1,4 +1,5 @@
 import { Navigate, Outlet, Route, Routes } from 'react-router-dom'
+import LibraryProvider from './context/LibraryContext'
 import AppLayout from './components/AppLayout/AppLayout'
 import EmptyState from './components/EmptyState/EmptyState'
 import { useAuth } from './hooks/useAuth'
@@ -18,9 +19,11 @@ function ProtectedLayout() {
   }
 
   return (
-    <AppLayout>
-      <Outlet />
-    </AppLayout>
+    <LibraryProvider>
+      <AppLayout>
+        <Outlet />
+      </AppLayout>
+    </LibraryProvider>
   )
 }
 

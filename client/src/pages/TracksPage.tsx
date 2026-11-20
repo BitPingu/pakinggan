@@ -1,9 +1,7 @@
-import { useEffect, useState } from 'react'
+import { useState } from 'react'
 import type { SubmitEvent } from 'react'
-import { createTrack, deleteTrack, getTracks, updateTrack } from '../api/tracks'
-import { getAlbums } from '../api/albums'
-import { getArtists } from '../api/artists'
-import type { Album, Artist, Track } from '../types/music'
+import { useLibrary } from '../hooks/useLibrary'
+import type { Track } from '../types/music'
 import PageHeader from '../components/PageHeader/PageHeader'
 import EmptyState from '../components/EmptyState/EmptyState'
 import LibrarySectionHeader from '../components/LibrarySectionHeader/LibrarySectionHeader'
@@ -11,12 +9,16 @@ import { Music2, Pencil, Plus, Save, Trash2, X } from 'lucide-react'
 
 // Displays and manages the tracks in the user's music library.
 function TracksPage() {
-  const [tracks, setTracks] = useState<Track[]>([])
-  const [albums, setAlbums] = useState<Album[]>([])
-  const [artists, setArtists] = useState<Artist[]>([])
-
-  const [isLoading, setIsLoading] = useState(true)
-  const [error, setError] = useState<string | null>(null)
+  const {
+    tracks,
+    albums,
+    artists,
+    isLoading,
+    error,
+    addTrack,
+    editTrack,
+    removeTrack,
+  } = useLibrary()
 
   const [trackTitle, setTrackTitle] = useState('')
   const [trackDuration, setTrackDuration] = useState('')
@@ -33,29 +35,6 @@ function TracksPage() {
 
   const [deletingTrackId, setDeletingTrackId] = useState<number | null>(null)
   const [deleteError, setDeleteError] = useState<string | null>(null)
-
-  // Fetches tracks, albums, and artists when the page first loads.
-  useEffect(() => {
-    async function fetchLibrary() {
-      try {
-        const [trackData, albumData, artistData] = await Promise.all([
-          getTracks(),
-          getAlbums(),
-          getArtists(),
-        ])
-
-        setTracks(trackData)
-        setAlbums(albumData)
-        setArtists(artistData)
-      } catch {
-        setError('Unable to load tracks. Please try again later.')
-      } finally {
-        setIsLoading(false)
-      }
-    }
-
-    fetchLibrary()
-  }, [])
 
   // Creates a new track through the backend.
   async function handleCreateTrack(event: SubmitEvent<HTMLFormElement>) {
@@ -76,13 +55,9 @@ function TracksPage() {
     setCreateError(null)
 
     try {
-      const newTrack = await createTrack(
-        trimmedTitle,
-        duration,
-        Number(selectedAlbumId),
-      )
+      // Add the new track to the shared collection.
+      await addTrack(trimmedTitle, duration, Number(selectedAlbumId))
 
-      setTracks((currentTracks) => [...currentTracks, newTrack])
       setTrackTitle('')
       setTrackDuration('')
       setSelectedAlbumId('')
@@ -134,17 +109,12 @@ function TracksPage() {
     setEditError(null)
 
     try {
-      const updatedTrack = await updateTrack(
+      // Update the track in the shared collection.
+      await editTrack(
         editingTrackId,
         trimmedTitle,
         duration,
         Number(editedAlbumId),
-      )
-
-      setTracks((currentTracks) =>
-        currentTracks.map((track) =>
-          track.id === updatedTrack.id ? updatedTrack : track,
-        ),
       )
 
       handleCancelEdit()
@@ -167,11 +137,8 @@ function TracksPage() {
     setDeleteError(null)
 
     try {
-      await deleteTrack(track.id)
-
-      setTracks((currentTracks) =>
-        currentTracks.filter((currentTrack) => currentTrack.id !== track.id),
-      )
+      // Remove the track from the shared collection.
+      await removeTrack(track.id)
     } catch {
       setDeleteError('Unable to delete track. Please try again.')
     } finally {

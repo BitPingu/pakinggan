@@ -1,58 +1,11 @@
-import { useEffect, useState } from 'react'
-import { getArtists } from '../api/artists'
-import { getAlbums } from '../api/albums'
-import { getTracks } from '../api/tracks'
-import type { Album, Artist, Track } from '../types/music'
+import { useLibrary } from '../hooks/useLibrary'
 import PageHeader from '../components/PageHeader/PageHeader'
 import EmptyState from '../components/EmptyState/EmptyState'
 import { Clock, Disc3, Music, Music2, Users } from 'lucide-react'
 
 // Displays the dashboard and library statistics.
 function DashboardPage() {
-  // Stores the artists retrieved from the backend.
-  const [artists, setArtists] = useState<Artist[]>([])
-
-  // Stores the albums retrieved from the backend.
-  const [albums, setAlbums] = useState<Album[]>([])
-
-  // Stores the tracks retrieved from the backend.
-  const [tracks, setTracks] = useState<Track[]>([])
-
-  // Tracks whether dashboard data is still loading.
-  const [isLoading, setIsLoading] = useState(true)
-
-  // Stores an error if dashboard data cannot be retrieved.
-  const [error, setError] = useState<string | null>(null)
-
-  // Fetches dashboard data when the page first loads.
-  useEffect(() => {
-    async function fetchDashboardData() {
-      try {
-        // Retrieve artists, albums, and tracks concurrently.
-        const [artistData, albumData, trackData] = await Promise.all([
-          getArtists(),
-          getAlbums(),
-          getTracks(),
-        ])
-
-        // Update the dashboard data.
-        setArtists(artistData)
-        setAlbums(albumData)
-        setTracks(trackData)
-      } catch (error) {
-        // Log the error for debugging.
-        console.error('Unable to load dashboard data:', error)
-
-        // Display an error message on the dashboard.
-        setError('Unable to load dashboard data. Please try again.')
-      } finally {
-        // Stop displaying the loading state.
-        setIsLoading(false)
-      }
-    }
-
-    fetchDashboardData()
-  }, [])
+  const { artists, albums, tracks, isLoading, error } = useLibrary()
 
   // Dashboard statistics displayed in the stat cards.
   const statistics = [
