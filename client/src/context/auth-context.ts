@@ -7,6 +7,7 @@ export interface AuthContextType {
   token: string | null // Access token used for authenticated API requests.
   isLoading: boolean // Indicates whether the initial session restoration is in progress.
   login: (username: string, password: string) => Promise<void> // Authenticates the user.
+  register: (username: string, email: string, password: string) => Promise<void> // Registers a new user.
   logout: () => void // Clears the current authentication session.
 }
 

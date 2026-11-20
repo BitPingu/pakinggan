@@ -1,5 +1,5 @@
 import { useEffect, useState, type ReactNode } from 'react'
-import { getCurrentUser, loginUser } from '../api/auth'
+import { getCurrentUser, loginUser, registerUser } from '../api/auth'
 import type { User } from '../types/user'
 import { ApiError } from '../api/request'
 import { AuthContext } from './auth-context'
@@ -69,6 +69,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setUser(currentUser)
   }
 
+  // Registers a new user through the backend.
+  async function register(username: string, email: string, password: string) {
+    await registerUser(username, email, password)
+  }
+
   // Logs out the user and clears their stored session and authentication state.
   function logout() {
     sessionStorage.removeItem('access_token')
@@ -77,7 +82,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }
 
   return (
-    <AuthContext.Provider value={{ user, token, isLoading, login, logout }}>
+    <AuthContext.Provider
+      value={{ user, token, isLoading, login, register, logout }}
+    >
       {children}
     </AuthContext.Provider>
   )

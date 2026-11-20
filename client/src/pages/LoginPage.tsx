@@ -1,5 +1,5 @@
 import { useState, type FormEvent } from 'react'
-import { Navigate, useNavigate } from 'react-router-dom'
+import { Link, Navigate, useNavigate } from 'react-router-dom'
 import { useAuth } from '../hooks/useAuth'
 import EmptyState from '../components/EmptyState/EmptyState'
 
@@ -72,6 +72,10 @@ function LoginPage() {
         >
           {isSubmitting ? 'Logging in...' : 'Log in'}
         </button>
+
+        <p className="login-description">
+          Don't have an account? <Link to="/register">Create an account</Link>
+        </p>
       </form>
     </main>
   )

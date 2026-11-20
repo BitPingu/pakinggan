@@ -8,6 +8,7 @@ import ArtistsPage from './pages/ArtistsPage'
 import AlbumsPage from './pages/AlbumsPage'
 import TracksPage from './pages/TracksPage'
 import LoginPage from './pages/LoginPage'
+import RegisterPage from './pages/RegisterPage'
 import './App.css'
 
 // Protects application pages from unauthenticated access.
@@ -41,6 +42,10 @@ function App() {
       <Route
         path="/login"
         element={user ? <Navigate to="/" replace /> : <LoginPage />}
+      />
+      <Route
+        path="/register"
+        element={user ? <Navigate to="/" replace /> : <RegisterPage />}
       />
 
       {/* Protected application pages */}

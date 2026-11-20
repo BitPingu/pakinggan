@@ -81,7 +81,27 @@ From the `server/` directory:
 uv run alembic upgrade head
 ```
 
-### 6. Start the Backend
+### 6. Access the Database
+
+PostgreSQL runs in Docker. To access the database interactively, run the following command from the project root:
+
+```bash
+docker exec -it pakinggan-db psql -U pakinggan -d pakinggan
+```
+
+Once connected, you can execute SQL queries directly. For example, to view registered users:
+
+```bash
+SELECT id, username, email FROM users;
+```
+
+To exit the PostgreSQL terminal:
+
+```bash
+\q
+```
+
+### 7. Start the Backend
 
 From the `server/` directory:
 
@@ -94,7 +114,7 @@ The API will be available at:
 - API: http://localhost:8000
 - API documentation: http://localhost:8000/docs
 
-### 7. Start the Frontend
+### 8. Start the Frontend
 
 Open a separate terminal:
 
@@ -127,4 +147,4 @@ Run `npm run format` to format files when needed.
 
 Run `npm run check` before committing changes to verify formatting, linting, tests, and the production build.
 
-Make sure PostgreSQL is running and the `pakinggan_test` database exists before running the checks.
+Make sure PostgreSQL is running and the `pakinggan_test` database has been created before running the checks.
