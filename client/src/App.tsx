@@ -9,6 +9,8 @@ import AlbumsPage from './pages/AlbumsPage'
 import TracksPage from './pages/TracksPage'
 import LoginPage from './pages/LoginPage'
 import RegisterPage from './pages/RegisterPage'
+import ForgotPasswordPage from './pages/ForgotPasswordPage'
+import ResetPasswordPage from './pages/ResetPasswordPage'
 import './App.css'
 
 // Protects application pages from unauthenticated access.
@@ -38,7 +40,7 @@ function App() {
 
   return (
     <Routes>
-      {/* Authentication page */}
+      {/* Authentication pages */}
       <Route
         path="/login"
         element={user ? <Navigate to="/" replace /> : <LoginPage />}
@@ -46,6 +48,14 @@ function App() {
       <Route
         path="/register"
         element={user ? <Navigate to="/" replace /> : <RegisterPage />}
+      />
+      <Route
+        path="/forgot-password"
+        element={user ? <Navigate to="/" replace /> : <ForgotPasswordPage />}
+      />
+      <Route
+        path="/reset-password"
+        element={user ? <Navigate to="/" replace /> : <ResetPasswordPage />}
       />
 
       {/* Protected application pages */}
