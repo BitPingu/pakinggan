@@ -6,6 +6,7 @@ from fastapi.responses import JSONResponse
 from sqlalchemy import text
 from sqlalchemy.exc import SQLAlchemyError
 
+from app.core.config import settings
 from app.database import engine
 from app.routers.albums import router as albums_router
 from app.routers.artists import router as artists_router
@@ -39,7 +40,7 @@ async def sqlalchemy_exception_handler(request: Request, exc: SQLAlchemyError):
 # middleware that processes requests and responses
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:5173"],
+    allow_origins=[settings.FRONTEND_URL],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
