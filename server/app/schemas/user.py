@@ -1,17 +1,17 @@
 from pydantic import BaseModel, ConfigDict, EmailStr, Field, field_validator
 
 
-# represents incoming registration data
-# including the plaintext password
+# Validates incoming registration data, including the plaintext password.
 class UserCreate(BaseModel):
-    username: str = Field(min_length=3, max_length=50)
+    username: str = Field(min_length=3, max_length=30)
     email: EmailStr
     password: str = Field(min_length=8, max_length=128)
 
+    # Removes surrounding whitespace and ensures the username is not empty.
     @field_validator("username")
     @classmethod
     def validate_username(cls, value: str) -> str:
-        value = value.strip()  # remove leading and trailing whitespace
+        value = value.strip()
 
         if not value:
             raise ValueError("Username cannot be empty")
@@ -19,24 +19,68 @@ class UserCreate(BaseModel):
         return value
 
 
-# represents outgoing user data
-# excluding the password and hash
+# Defines the user data returned by the API, excluding password information.
 class UserResponse(BaseModel):
     id: int
     username: str
     email: EmailStr
 
-    # read from object attributes
+    # Allows the schema to read data from SQLAlchemy model attributes.
     model_config = ConfigDict(from_attributes=True)
 
 
-# validates the username and password submitted by the user
+# Validates the username and password submitted during login.
 class UserLogin(BaseModel):
     username: str = Field(min_length=1, max_length=50)
     password: str = Field(min_length=1, max_length=128)
 
+    # Removes surrounding whitespace from the username.
+    @field_validator("username")
+    @classmethod
+    def validate_username(cls, value: str) -> str:
+        return value.strip()
 
-# defines what the api returns after successful authentication
+
+# Validates the current password submitted when deleting an account.
+class AccountDeletionRequest(BaseModel):
+    password: str = Field(min_length=1, max_length=128)
+
+
+# Validates the current and new passwords submitted when changing a password.
+class PasswordChangeRequest(BaseModel):
+    current_password: str = Field(min_length=1, max_length=128)
+    new_password: str = Field(min_length=8, max_length=128)
+
+
+# Validates the new email and current password submitted when changing an email.
+class EmailChangeRequest(BaseModel):
+    email: EmailStr
+    current_password: str = Field(min_length=1, max_length=128)
+
+
+# Validates the new username and current password submitted when changing a username.
+class UsernameChangeRequest(BaseModel):
+    username: str = Field(min_length=3, max_length=50)
+    current_password: str = Field(min_length=1, max_length=128)
+
+
+# Defines the response returned after successful authentication.
 class TokenResponse(BaseModel):
     access_token: str
     token_type: str = "bearer"
+
+
+# Validates the email submitted when requesting a password reset.
+class ForgotPasswordRequest(BaseModel):
+    email: EmailStr
+
+
+# Validates the token and new password submitted during a password reset.
+class PasswordResetRequest(BaseModel):
+    token: str = Field(min_length=1, max_length=255)
+    new_password: str = Field(min_length=8, max_length=128)
+
+
+# Defines the generic response returned by password recovery endpoints.
+class PasswordResetResponse(BaseModel):
+    message: str

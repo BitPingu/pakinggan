@@ -93,6 +93,14 @@ def test_get_albums(client, artist):
     }
 
 
+# returns an empty list when no albums exist
+def test_get_albums_empty(client):
+    response = client.get("/api/albums/")
+
+    assert response.status_code == 200
+    assert response.json() == []
+
+
 # retrieving a single album
 def test_get_album(client, album):
     # verify correct album
@@ -128,6 +136,45 @@ def test_update_album(client, album):
     assert response.json()["id"] == album["id"]
     assert response.json()["title"] == "The Bends"
     assert response.json()["artist_id"] == album["artist_id"]
+
+
+# rejects an empty album title during an update
+def test_update_album_empty_title(client, album):
+    response = client.put(
+        f"/api/albums/{album['id']}",
+        json={
+            "title": "",
+            "artist_id": album["artist_id"],
+        },
+    )
+
+    assert response.status_code == 422
+
+
+# rejects a whitespace-only album title during an update
+def test_update_album_whitespace_title(client, album):
+    response = client.put(
+        f"/api/albums/{album['id']}",
+        json={
+            "title": "   ",
+            "artist_id": album["artist_id"],
+        },
+    )
+
+    assert response.status_code == 422
+
+
+# rejects an invalid artist ID during an update
+def test_update_album_invalid_artist_id(client, album):
+    response = client.put(
+        f"/api/albums/{album['id']}",
+        json={
+            "title": "The Bends",
+            "artist_id": 0,
+        },
+    )
+
+    assert response.status_code == 422
 
 
 # updating an album that doesn't exist
@@ -194,13 +241,14 @@ def test_delete_album_with_tracks(client, album):
         },
     )
 
-    # attempt to delete the album
     response = client.delete(f"/api/albums/{album['id']}")
 
-    assert response.status_code == 500
-    assert response.json() == {"detail": "A database error occurred"}
+    assert response.status_code == 409
+    assert response.json() == {
+        "detail": "Cannot delete an album that has associated tracks"
+    }
 
-    # verify album still exists
+    # verifies the album still exists
     get_response = client.get(f"/api/albums/{album['id']}")
 
     assert get_response.status_code == 200

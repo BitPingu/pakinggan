@@ -1,0 +1,348 @@
+import { useState, type FormEvent } from 'react'
+import { useNavigate } from 'react-router-dom'
+import PageHeader from '../components/PageHeader/PageHeader'
+import { useAuth } from '../hooks/useAuth'
+
+// Displays account information and account management options.
+function SettingsPage() {
+  const { user, changeUsername, changeEmail, changePassword, deleteAccount } =
+    useAuth()
+  const navigate = useNavigate()
+
+  // Tracks the current password, submission status, and deletion errors.
+  const [password, setPassword] = useState('')
+  const [error, setError] = useState('')
+  const [isSubmitting, setIsSubmitting] = useState(false)
+
+  // Tracks password-change inputs, submission status, and errors.
+  const [currentPassword, setCurrentPassword] = useState('')
+  const [newPassword, setNewPassword] = useState('')
+  const [confirmPassword, setConfirmPassword] = useState('')
+  const [passwordError, setPasswordError] = useState('')
+  const [isChangingPassword, setIsChangingPassword] = useState(false)
+
+  // Tracks email-change inputs, submission status, and errors.
+  const [newEmail, setNewEmail] = useState('')
+  const [emailPassword, setEmailPassword] = useState('')
+  const [emailError, setEmailError] = useState('')
+  const [isChangingEmail, setIsChangingEmail] = useState(false)
+  const [emailSuccess, setEmailSuccess] = useState('')
+
+  // Tracks username-change inputs, submission status, and errors.
+  const [newUsername, setNewUsername] = useState('')
+  const [usernamePassword, setUsernamePassword] = useState('')
+  const [usernameError, setUsernameError] = useState('')
+  const [isChangingUsername, setIsChangingUsername] = useState(false)
+  const [usernameSuccess, setUsernameSuccess] = useState('')
+
+  // Changes the password after validating the form inputs.
+  async function handleChangePassword(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault()
+    setPasswordError('')
+
+    if (newPassword !== confirmPassword) {
+      setPasswordError('New passwords do not match.')
+      return
+    }
+
+    setIsChangingPassword(true)
+
+    try {
+      await changePassword(currentPassword, newPassword)
+      navigate('/login', { replace: true })
+    } catch (error) {
+      setPasswordError(
+        error instanceof Error
+          ? error.message
+          : 'Unable to change your password. Please try again.',
+      )
+    } finally {
+      setIsChangingPassword(false)
+    }
+  }
+
+  // Changes the email after validating the form inputs.
+  async function handleChangeEmail(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault()
+    setEmailError('')
+    setEmailSuccess('')
+
+    setIsChangingEmail(true)
+
+    try {
+      await changeEmail(newEmail, emailPassword)
+      setNewEmail('')
+      setEmailPassword('')
+      setEmailSuccess('Your email has been changed successfully.')
+    } catch (error) {
+      setEmailError(
+        error instanceof Error
+          ? error.message
+          : 'Unable to change your email. Please try again.',
+      )
+    } finally {
+      setIsChangingEmail(false)
+    }
+  }
+
+  // Changes the username after validating the form inputs.
+  async function handleChangeUsername(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault()
+    setUsernameError('')
+    setUsernameSuccess('')
+
+    setIsChangingUsername(true)
+
+    try {
+      await changeUsername(newUsername, usernamePassword)
+      setNewUsername('')
+      setUsernamePassword('')
+      setUsernameSuccess('Your username has been changed successfully.')
+    } catch (error) {
+      setUsernameError(
+        error instanceof Error
+          ? error.message
+          : 'Unable to change your username. Please try again.',
+      )
+    } finally {
+      setIsChangingUsername(false)
+    }
+  }
+
+  // Deletes the account after password verification and final confirmation.
+  async function handleDeleteAccount(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault()
+    setError('')
+
+    const confirmed = window.confirm(
+      'Are you sure you want to permanently delete your account? This action cannot be undone.',
+    )
+
+    if (!confirmed) {
+      return
+    }
+
+    setIsSubmitting(true)
+
+    try {
+      await deleteAccount(password)
+      navigate('/login', { replace: true })
+    } catch (error) {
+      setError(
+        error instanceof Error
+          ? error.message
+          : 'Unable to delete your account. Please try again.',
+      )
+    } finally {
+      setIsSubmitting(false)
+    }
+  }
+
+  return (
+    <>
+      <PageHeader
+        eyebrow="YOUR ACCOUNT"
+        title="Settings"
+        description="Manage your account information and preferences."
+      />
+
+      {/* Account information */}
+      <section className="settings-section">
+        <h2>Account Information</h2>
+
+        <div className="settings-info">
+          <div>
+            <span>Username</span>
+            <p>{user?.username}</p>
+          </div>
+
+          <div>
+            <span>Email</span>
+            <p>{user?.email}</p>
+          </div>
+        </div>
+      </section>
+
+      <div className="settings-grid">
+        {/* Email change */}
+        <section className="settings-section">
+          <h2>Change Email</h2>
+          <p>Update the email address associated with your account.</p>
+
+          <form className="settings-password-form" onSubmit={handleChangeEmail}>
+            <label htmlFor="new-email">New Email</label>
+            <input
+              id="new-email"
+              type="email"
+              value={newEmail}
+              onChange={(event) => setNewEmail(event.target.value)}
+              autoComplete="email"
+              maxLength={254}
+              required
+            />
+
+            <label htmlFor="email-current-password">Current Password</label>
+            <input
+              id="email-current-password"
+              type="password"
+              value={emailPassword}
+              onChange={(event) => setEmailPassword(event.target.value)}
+              autoComplete="current-password"
+              required
+            />
+
+            {emailError && <p className="form-error">{emailError}</p>}
+
+            {/* Displays confirmation after a successful email change. */}
+            {emailSuccess && <p className="form-success">{emailSuccess}</p>}
+
+            <button
+              type="submit"
+              disabled={isChangingEmail || !newEmail || !emailPassword}
+            >
+              {isChangingEmail ? 'Changing Email...' : 'Change Email'}
+            </button>
+          </form>
+        </section>
+
+        {/* Username change */}
+        <section className="settings-section">
+          <h2>Change Username</h2>
+          <p>Update the username associated with your account.</p>
+
+          <form
+            className="settings-password-form"
+            onSubmit={handleChangeUsername}
+          >
+            <label htmlFor="new-username">New Username</label>
+            <input
+              id="new-username"
+              type="text"
+              value={newUsername}
+              onChange={(event) => setNewUsername(event.target.value)}
+              autoComplete="username"
+              minLength={3}
+              maxLength={50}
+              required
+            />
+
+            <label htmlFor="username-current-password">Current Password</label>
+            <input
+              id="username-current-password"
+              type="password"
+              value={usernamePassword}
+              onChange={(event) => setUsernamePassword(event.target.value)}
+              autoComplete="current-password"
+              required
+            />
+
+            {usernameError && <p className="form-error">{usernameError}</p>}
+
+            {/* Displays confirmation after a successful username change. */}
+            {usernameSuccess && (
+              <p className="form-success">{usernameSuccess}</p>
+            )}
+
+            <button
+              type="submit"
+              disabled={
+                isChangingUsername || !newUsername.trim() || !usernamePassword
+              }
+            >
+              {isChangingUsername ? 'Changing Username...' : 'Change Username'}
+            </button>
+          </form>
+        </section>
+
+        {/* Password change */}
+        <section className="settings-section">
+          <h2>Change Password</h2>
+          <p>Update your password to keep your account secure.</p>
+
+          <form
+            className="settings-password-form"
+            onSubmit={handleChangePassword}
+          >
+            <label htmlFor="change-current-password">Current Password</label>
+            <input
+              id="change-current-password"
+              type="password"
+              value={currentPassword}
+              onChange={(event) => setCurrentPassword(event.target.value)}
+              autoComplete="current-password"
+              required
+            />
+
+            <label htmlFor="new-password">New Password</label>
+            <input
+              id="new-password"
+              type="password"
+              value={newPassword}
+              onChange={(event) => setNewPassword(event.target.value)}
+              autoComplete="new-password"
+              minLength={8}
+              maxLength={128}
+              required
+            />
+
+            <label htmlFor="confirm-password">Confirm New Password</label>
+            <input
+              id="confirm-password"
+              type="password"
+              value={confirmPassword}
+              onChange={(event) => setConfirmPassword(event.target.value)}
+              autoComplete="new-password"
+              minLength={8}
+              maxLength={128}
+              required
+            />
+
+            {passwordError && <p className="form-error">{passwordError}</p>}
+
+            <button
+              type="submit"
+              disabled={
+                isChangingPassword ||
+                !currentPassword ||
+                !newPassword ||
+                !confirmPassword
+              }
+            >
+              {isChangingPassword ? 'Changing Password...' : 'Change Password'}
+            </button>
+          </form>
+        </section>
+      </div>
+
+      {/* Account deletion */}
+      <section className="settings-section settings-danger">
+        <h2>Delete Account</h2>
+        <p>
+          Permanently delete your pakinggan account. This action cannot be
+          undone. Your account will be removed, but the shared music library
+          will remain unaffected.
+        </p>
+
+        <form className="settings-delete-form" onSubmit={handleDeleteAccount}>
+          <label htmlFor="current-password">Current Password</label>
+          <input
+            id="current-password"
+            type="password"
+            value={password}
+            onChange={(event) => setPassword(event.target.value)}
+            autoComplete="current-password"
+            required
+          />
+
+          {error && <p className="form-error">{error}</p>}
+
+          <button type="submit" disabled={isSubmitting || !password}>
+            {isSubmitting ? 'Deleting Account...' : 'Delete Account'}
+          </button>
+        </form>
+      </section>
+    </>
+  )
+}
+
+export default SettingsPage

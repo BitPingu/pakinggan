@@ -1,14 +1,15 @@
 from pydantic import BaseModel, ConfigDict, Field, field_validator
 
 
-# validates data when creating an artist
+# Validates data when creating an artist.
 class ArtistCreate(BaseModel):
     name: str = Field(min_length=1, max_length=255)
 
+    # Removes surrounding whitespace and ensures the name is not empty.
     @field_validator("name")
     @classmethod
     def validate_name(cls, value: str) -> str:
-        value = value.strip()  # remove leading and trailing whitespace
+        value = value.strip()
 
         if not value:
             raise ValueError("Artist name cannot be empty")
@@ -16,14 +17,15 @@ class ArtistCreate(BaseModel):
         return value
 
 
-# validates data when updating an artist
+# Validates data when updating an artist.
 class ArtistUpdate(BaseModel):
     name: str = Field(min_length=1, max_length=255)
 
+    # Removes surrounding whitespace and ensures the name is not empty.
     @field_validator("name")
     @classmethod
     def validate_name(cls, value: str) -> str:
-        value = value.strip()  # remove leading and trailing whitespace
+        value = value.strip()
 
         if not value:
             raise ValueError("Artist name cannot be empty")
@@ -31,10 +33,10 @@ class ArtistUpdate(BaseModel):
         return value
 
 
-# defines the structure returned by the api
+# Defines the structure returned by the API.
 class ArtistResponse(BaseModel):
     id: int
     name: str
 
-    # read from object attributes
+    # Allows the schema to read data from ORM model attributes.
     model_config = ConfigDict(from_attributes=True)

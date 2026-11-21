@@ -1,0 +1,29 @@
+.app-layout {
+  min-height: 100vh;
+  background: #101014;
+  color: #f5f5f5;
+}
+
+.main-content {
+  min-height: 100vh;
+  margin-left: 240px;
+  padding: 48px;
+  transition: margin-left 0.25s ease;
+}
+
+.app-layout.sidebar-collapsed .main-content {
+  margin-left: 84px;
+}
+
+/* Prevent decorative icon selection */
+.app-layout svg[aria-hidden='true'] {
+  -webkit-user-select: none;
+  user-select: none;
+}
+
+/* Responsive layout */
+@media (max-width: 600px) {
+  .main-content {
+    padding: 28px 20px;
+  }
+}

@@ -136,6 +136,14 @@ def test_get_tracks(client, album):
     }
 
 
+# returns an empty list when no tracks exist
+def test_get_tracks_empty(client):
+    response = client.get("/api/tracks/")
+
+    assert response.status_code == 200
+    assert response.json() == []
+
+
 # retrieving an individual track
 def test_get_track(client, album):
     create_response = client.post(
@@ -263,6 +271,54 @@ def test_update_track_empty_title(client, album):
     assert response.status_code == 422
 
 
+# updating a track with a whitespace-only title
+def test_update_track_whitespace_title(client, album):
+    create_response = client.post(
+        "/api/tracks/",
+        json={
+            "title": "Paranoid Android",
+            "duration": 383,
+            "album_id": album["id"],
+        },
+    )
+    track_id = create_response.json()["id"]
+
+    response = client.put(
+        f"/api/tracks/{track_id}",
+        json={
+            "title": "   ",
+            "duration": 383,
+            "album_id": album["id"],
+        },
+    )
+
+    assert response.status_code == 422
+
+
+# updating a track with an invalid album ID
+def test_update_track_invalid_album_id(client, album):
+    create_response = client.post(
+        "/api/tracks/",
+        json={
+            "title": "Paranoid Android",
+            "duration": 383,
+            "album_id": album["id"],
+        },
+    )
+    track_id = create_response.json()["id"]
+
+    response = client.put(
+        f"/api/tracks/{track_id}",
+        json={
+            "title": "Paranoid Android",
+            "duration": 383,
+            "album_id": 0,
+        },
+    )
+
+    assert response.status_code == 422
+
+
 # updating a track with negative duration
 def test_update_track_negative_duration(client, album):
     create_response = client.post(
@@ -286,6 +342,60 @@ def test_update_track_negative_duration(client, album):
     )
 
     assert response.status_code == 422
+
+
+# updating a track without a duration
+def test_update_track_without_duration(client, album):
+    create_response = client.post(
+        "/api/tracks/",
+        json={
+            "title": "Paranoid Android",
+            "duration": 383,
+            "album_id": album["id"],
+        },
+    )
+    track_id = create_response.json()["id"]
+
+    response = client.put(
+        f"/api/tracks/{track_id}",
+        json={
+            "title": "Paranoid Android",
+            "album_id": album["id"],
+        },
+    )
+
+    assert response.status_code == 200
+    assert response.json()["duration"] is None
+
+
+# verifies that an invalid update leaves the track unchanged
+def test_update_track_invalid_data_unchanged(client, album):
+    create_response = client.post(
+        "/api/tracks/",
+        json={
+            "title": "Paranoid Android",
+            "duration": 383,
+            "album_id": album["id"],
+        },
+    )
+    track_id = create_response.json()["id"]
+
+    response = client.put(
+        f"/api/tracks/{track_id}",
+        json={
+            "title": "",
+            "duration": 383,
+            "album_id": album["id"],
+        },
+    )
+
+    assert response.status_code == 422
+
+    get_response = client.get(f"/api/tracks/{track_id}")
+
+    assert get_response.status_code == 200
+    assert get_response.json()["title"] == "Paranoid Android"
+    assert get_response.json()["duration"] == 383
 
 
 # updating a track to another valid album

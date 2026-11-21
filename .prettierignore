@@ -1,0 +1,12 @@
+# Dependencies
+node_modules/
+client/node_modules/
+
+# Build output
+client/dist/
+
+# Python environment and cache
+server/.venv/
+server/.pytest_cache/
+server/__pycache__/
+server/.ruff_cache/

@@ -1,0 +1,150 @@
+/* Account settings page */
+
+.settings-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 24px;
+  align-items: stretch;
+  margin-bottom: 32px;
+}
+
+.settings-section {
+  margin-bottom: 32px;
+  padding: 24px;
+  border: 1px solid #292930;
+  border-radius: 12px;
+  background: #17171d;
+}
+
+/* Removes extra spacing between grid rows. */
+.settings-grid .settings-section {
+  margin-bottom: 0;
+}
+
+.settings-section h2 {
+  margin: 0 0 20px;
+  font-size: 17px;
+  font-weight: 600;
+}
+
+.settings-info {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 24px;
+}
+
+.settings-info span {
+  color: #9696a2;
+  font-size: 13px;
+}
+
+.settings-info p {
+  margin: 8px 0 0;
+  font-size: 14px;
+}
+
+.settings-danger {
+  border-color: #492b30;
+}
+
+.settings-section > p {
+  max-width: 620px;
+  margin: -8px 0 24px;
+  color: #9696a2;
+  font-size: 14px;
+  line-height: 1.6;
+}
+
+.settings-delete-form,
+.settings-password-form {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  max-width: 400px;
+}
+
+.settings-delete-form label,
+.settings-password-form label {
+  margin-bottom: 8px;
+  font-size: 13px;
+  font-weight: 500;
+}
+
+.settings-delete-form input,
+.settings-password-form input {
+  width: 100%;
+  margin-bottom: 20px;
+  padding: 12px 14px;
+  border: 1px solid #292930;
+  border-radius: 8px;
+  outline: none;
+  background: #101014;
+  color: #f5f5f5;
+}
+
+.settings-delete-form input:focus,
+.settings-password-form input:focus {
+  border-color: #a78bfa;
+}
+
+.settings-delete-form button {
+  padding: 11px 16px;
+  border: 1px solid #71343d;
+  border-radius: 8px;
+  background: #49252c;
+  color: #fca5a5;
+  font: inherit;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition:
+    background 0.2s,
+    border-color 0.2s;
+}
+
+.settings-delete-form button:hover:not(:disabled) {
+  border-color: #a33e4b;
+  background: #642d36;
+}
+
+.settings-delete-form button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.settings-password-form button {
+  padding: 11px 16px;
+  border: 1px solid #3d3d4a;
+  border-radius: 8px;
+  background: #292933;
+  color: #f5f5f5;
+  font: inherit;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition:
+    background 0.2s,
+    border-color 0.2s;
+}
+
+.settings-password-form button:hover:not(:disabled) {
+  border-color: #555565;
+  background: #363642;
+}
+
+.settings-password-form button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+@media (max-width: 600px) {
+  .settings-grid {
+    grid-template-columns: 1fr;
+    gap: 16px;
+  }
+
+  .settings-info {
+    grid-template-columns: 1fr;
+    gap: 20px;
+  }
+}
