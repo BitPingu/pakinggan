@@ -27,6 +27,7 @@ from app.schemas.user import (
     TokenResponse,
     UserCreate,
     UserLogin,
+    UsernameChangeRequest,
     UserResponse,
 )
 
@@ -53,7 +54,7 @@ def create_user(user: UserCreate, db: Session = Depends(get_db)):
     if existing_user:
         raise HTTPException(
             status_code=status.HTTP_409_CONFLICT,
-            detail="Username or email already registered",
+            detail="Username or email already registered.",
         )
 
     db_user = User(
@@ -79,7 +80,7 @@ def login(user: UserLogin, db: Session = Depends(get_db)):
     if not db_user or not verify_password(user.password, db_user.hashed_password):
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Invalid username or password",
+            detail="Invalid username or password.",
             headers={"WWW-Authenticate": "Bearer"},
         )
 
@@ -127,7 +128,7 @@ def forgot_password(
     try:
         send_password_reset_email(db_user.email, reset_url)
     except Exception:
-        logger.exception("Failed to send password-reset email")
+        logger.exception("Failed to send password-reset email.")
 
     return generic_response
 
@@ -148,7 +149,7 @@ def reset_password(
     if db_user is None or db_user.password_reset_expires_at is None:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Invalid or expired password-reset token",
+            detail="Invalid or expired password-reset token.",
         )
 
     expiration = db_user.password_reset_expires_at
@@ -160,7 +161,7 @@ def reset_password(
     if expiration <= datetime.now(timezone.utc):
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Invalid or expired password-reset token",
+            detail="Invalid or expired password-reset token.",
         )
 
     # Updates the password and invalidates existing access tokens.
@@ -191,7 +192,7 @@ def delete_account(
     if not verify_password(request.password, current_user.hashed_password):
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Incorrect password",
+            detail="Incorrect password.",
         )
 
     # Deletes the account without affecting the shared music library.
@@ -210,14 +211,14 @@ def change_password(
     if not verify_password(request.current_password, current_user.hashed_password):
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Incorrect password",
+            detail="Incorrect password.",
         )
 
     # Prevents changing the password to its existing value.
     if verify_password(request.new_password, current_user.hashed_password):
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail="New password must be different from the current password",
+            detail="New password must be different from the current password.",
         )
 
     # Updates the password and invalidates existing access tokens.
@@ -242,7 +243,7 @@ def change_email(
     if not verify_password(request.current_password, current_user.hashed_password):
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Incorrect password",
+            detail="Incorrect password.",
         )
 
     new_email = str(request.email)
@@ -251,7 +252,7 @@ def change_email(
     if new_email == current_user.email:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail="New email must be different from the current email",
+            detail="New email must be different from the current email.",
         )
 
     # Prevents changing to an email already registered to another account.
@@ -260,7 +261,7 @@ def change_email(
     if existing_user:
         raise HTTPException(
             status_code=status.HTTP_409_CONFLICT,
-            detail="Email already registered",
+            detail="Email already registered.",
         )
 
     # Updates the email and invalidates any outstanding password-reset token.
@@ -271,3 +272,50 @@ def change_email(
     db.commit()
 
     return {"message": "Your email has been changed successfully."}
+
+
+# Changes the authenticated user's username after verifying their current password.
+@router.put("/me/username", response_model=PasswordResetResponse)
+def change_username(
+    request: UsernameChangeRequest,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    # Verifies the current password before allowing the change.
+    if not verify_password(request.current_password, current_user.hashed_password):
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Incorrect password.",
+        )
+
+    new_username = request.username.strip()
+
+    # Rejects usernames containing only whitespace.
+    if not new_username:
+        raise HTTPException(
+            status_code=status.HTTP_422_UNPROCESSABLE_CONTENT,
+            detail="Username cannot be empty.",
+        )
+
+    # Prevents changing the username to its existing value.
+    if new_username == current_user.username:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="New username must be different from the current username.",
+        )
+
+    # Prevents changing to a username already registered to another account.
+    existing_user = db.query(User).filter(User.username == new_username).first()
+
+    if existing_user:
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail="Username already registered.",
+        )
+
+    # Updates the username without invalidating the current session.
+    current_user.username = new_username
+
+    db.commit()
+
+    return {"message": "Your username has been changed successfully."}

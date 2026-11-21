@@ -5,7 +5,8 @@ import { useAuth } from '../hooks/useAuth'
 
 // Displays account information and account management options.
 function SettingsPage() {
-  const { user, changeEmail, changePassword, deleteAccount } = useAuth()
+  const { user, changeUsername, changeEmail, changePassword, deleteAccount } =
+    useAuth()
   const navigate = useNavigate()
 
   // Tracks the current password, submission status, and deletion errors.
@@ -26,6 +27,13 @@ function SettingsPage() {
   const [emailError, setEmailError] = useState('')
   const [isChangingEmail, setIsChangingEmail] = useState(false)
   const [emailSuccess, setEmailSuccess] = useState('')
+
+  // Tracks username-change inputs, submission status, and errors.
+  const [newUsername, setNewUsername] = useState('')
+  const [usernamePassword, setUsernamePassword] = useState('')
+  const [usernameError, setUsernameError] = useState('')
+  const [isChangingUsername, setIsChangingUsername] = useState(false)
+  const [usernameSuccess, setUsernameSuccess] = useState('')
 
   // Changes the password after validating the form inputs.
   async function handleChangePassword(event: FormEvent<HTMLFormElement>) {
@@ -74,6 +82,30 @@ function SettingsPage() {
       )
     } finally {
       setIsChangingEmail(false)
+    }
+  }
+
+  // Changes the username after validating the form inputs.
+  async function handleChangeUsername(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault()
+    setUsernameError('')
+    setUsernameSuccess('')
+
+    setIsChangingUsername(true)
+
+    try {
+      await changeUsername(newUsername, usernamePassword)
+      setNewUsername('')
+      setUsernamePassword('')
+      setUsernameSuccess('Your username has been changed successfully.')
+    } catch (error) {
+      setUsernameError(
+        error instanceof Error
+          ? error.message
+          : 'Unable to change your username. Please try again.',
+      )
+    } finally {
+      setIsChangingUsername(false)
     }
   }
 
@@ -169,6 +201,55 @@ function SettingsPage() {
               disabled={isChangingEmail || !newEmail || !emailPassword}
             >
               {isChangingEmail ? 'Changing Email...' : 'Change Email'}
+            </button>
+          </form>
+        </section>
+
+        {/* Username change */}
+        <section className="settings-section">
+          <h2>Change Username</h2>
+          <p>Update the username associated with your account.</p>
+
+          <form
+            className="settings-password-form"
+            onSubmit={handleChangeUsername}
+          >
+            <label htmlFor="new-username">New Username</label>
+            <input
+              id="new-username"
+              type="text"
+              value={newUsername}
+              onChange={(event) => setNewUsername(event.target.value)}
+              autoComplete="username"
+              minLength={3}
+              maxLength={50}
+              required
+            />
+
+            <label htmlFor="username-current-password">Current Password</label>
+            <input
+              id="username-current-password"
+              type="password"
+              value={usernamePassword}
+              onChange={(event) => setUsernamePassword(event.target.value)}
+              autoComplete="current-password"
+              required
+            />
+
+            {usernameError && <p className="form-error">{usernameError}</p>}
+
+            {/* Displays confirmation after a successful username change. */}
+            {usernameSuccess && (
+              <p className="form-success">{usernameSuccess}</p>
+            )}
+
+            <button
+              type="submit"
+              disabled={
+                isChangingUsername || !newUsername.trim() || !usernamePassword
+              }
+            >
+              {isChangingUsername ? 'Changing Username...' : 'Change Username'}
             </button>
           </form>
         </section>

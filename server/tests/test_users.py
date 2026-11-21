@@ -54,7 +54,7 @@ def test_create_user_duplicate_username(client, user):
     )
 
     assert response.status_code == 409
-    assert response.json()["detail"] == "Username or email already registered"
+    assert response.json()["detail"] == "Username or email already registered."
 
 
 # duplicate email addresses
@@ -69,7 +69,7 @@ def test_create_user_duplicate_email(client, user):
     )
 
     assert response.status_code == 409
-    assert response.json()["detail"] == "Username or email already registered"
+    assert response.json()["detail"] == "Username or email already registered."
 
 
 # password validation
@@ -205,7 +205,7 @@ def test_login_incorrect_password(client, user):
     )
 
     assert response.status_code == 401
-    assert response.json()["detail"] == "Invalid username or password"
+    assert response.json()["detail"] == "Invalid username or password."
 
 
 # a nonexistent username also returns 401
@@ -219,7 +219,7 @@ def test_login_nonexistent_user(client):
     )
 
     assert response.status_code == 401
-    assert response.json()["detail"] == "Invalid username or password"
+    assert response.json()["detail"] == "Invalid username or password."
 
 
 # user can retrieve their own profile (valid token)
@@ -426,7 +426,7 @@ def test_reset_password_invalid_token(client):
     )
 
     assert response.status_code == 400
-    assert response.json()["detail"] == "Invalid or expired password-reset token"
+    assert response.json()["detail"] == "Invalid or expired password-reset token."
 
 
 # An expired reset token is rejected.
@@ -449,7 +449,7 @@ def test_reset_password_expired_token(client, user, db_session):
     )
 
     assert response.status_code == 400
-    assert response.json()["detail"] == "Invalid or expired password-reset token"
+    assert response.json()["detail"] == "Invalid or expired password-reset token."
 
 
 # A reset token cannot be reused after a successful password reset.
@@ -602,7 +602,7 @@ def test_delete_account_incorrect_password(client, user, db_session):
     )
 
     assert response.status_code == 401
-    assert response.json()["detail"] == "Incorrect password"
+    assert response.json()["detail"] == "Incorrect password."
 
     existing_user = db_session.query(User).filter(User.id == user["id"]).first()
 
@@ -708,7 +708,7 @@ def test_change_password_incorrect_password(client, user, db_session):
     )
 
     assert response.status_code == 401
-    assert response.json()["detail"] == "Incorrect password"
+    assert response.json()["detail"] == "Incorrect password."
 
     user_record = db_session.query(User).filter(User.id == user["id"]).first()
 
@@ -739,7 +739,7 @@ def test_change_password_same_password(client, user):
 
     assert response.status_code == 400
     assert response.json()["detail"] == (
-        "New password must be different from the current password"
+        "New password must be different from the current password."
     )
 
 
@@ -949,7 +949,7 @@ def test_change_email_incorrect_password(client, user, db_session):
     )
 
     assert response.status_code == 401
-    assert response.json()["detail"] == "Incorrect password"
+    assert response.json()["detail"] == "Incorrect password."
 
     user_record = db_session.query(User).filter(User.id == user["id"]).first()
 
@@ -979,7 +979,7 @@ def test_change_email_same_email(client, user):
 
     assert response.status_code == 400
     assert response.json()["detail"] == (
-        "New email must be different from the current email"
+        "New email must be different from the current email."
     )
 
 
@@ -1014,7 +1014,7 @@ def test_change_email_duplicate_email(client, user, db_session):
     )
 
     assert response.status_code == 409
-    assert response.json()["detail"] == "Email already registered"
+    assert response.json()["detail"] == "Email already registered."
 
     user_record = db_session.query(User).filter(User.id == user["id"]).first()
 
@@ -1104,3 +1104,296 @@ def test_change_email_invalidates_reset_token(client, user, db_session):
     )
 
     assert reset_response.status_code == 400
+
+
+# Changes the authenticated user's username successfully.
+def test_change_username_success(client, user, db_session):
+    login_response = client.post(
+        "/api/users/login",
+        json={
+            "username": user["username"],
+            "password": "securepassword123",
+        },
+    )
+
+    token = login_response.json()["access_token"]
+
+    response = client.put(
+        "/api/users/me/username",
+        json={
+            "username": "new_gavin",
+            "current_password": "securepassword123",
+        },
+        headers={"Authorization": f"Bearer {token}"},
+    )
+
+    assert response.status_code == 200
+    assert response.json() == {
+        "message": "Your username has been changed successfully."
+    }
+
+    # Confirms the username was updated without invalidating the session.
+    profile_response = client.get(
+        "/api/users/me",
+        headers={"Authorization": f"Bearer {token}"},
+    )
+
+    assert profile_response.status_code == 200
+    assert profile_response.json()["username"] == "new_gavin"
+
+    user_record = db_session.query(User).filter(User.id == user["id"]).first()
+
+    assert user_record.username == "new_gavin"
+    assert user_record.token_version == 0
+
+
+# An incorrect current password prevents a username change.
+def test_change_username_incorrect_password(client, user, db_session):
+    login_response = client.post(
+        "/api/users/login",
+        json={
+            "username": user["username"],
+            "password": "securepassword123",
+        },
+    )
+
+    token = login_response.json()["access_token"]
+
+    response = client.put(
+        "/api/users/me/username",
+        json={
+            "username": "new_gavin",
+            "current_password": "wrongpassword",
+        },
+        headers={"Authorization": f"Bearer {token}"},
+    )
+
+    assert response.status_code == 401
+    assert response.json()["detail"] == "Incorrect password."
+
+    user_record = db_session.query(User).filter(User.id == user["id"]).first()
+
+    assert user_record.username == user["username"]
+
+
+# Prevents changing the username to its existing value.
+def test_change_username_same_username(client, user):
+    login_response = client.post(
+        "/api/users/login",
+        json={
+            "username": user["username"],
+            "password": "securepassword123",
+        },
+    )
+
+    token = login_response.json()["access_token"]
+
+    response = client.put(
+        "/api/users/me/username",
+        json={
+            "username": user["username"],
+            "current_password": "securepassword123",
+        },
+        headers={"Authorization": f"Bearer {token}"},
+    )
+
+    assert response.status_code == 400
+    assert response.json()["detail"] == (
+        "New username must be different from the current username."
+    )
+
+
+# Prevents changing to a username already registered to another account.
+def test_change_username_duplicate_username(client, user):
+    client.post(
+        "/api/users/",
+        json={
+            "username": "another_user",
+            "email": "another@example.com",
+            "password": "securepassword123",
+        },
+    )
+
+    login_response = client.post(
+        "/api/users/login",
+        json={
+            "username": user["username"],
+            "password": "securepassword123",
+        },
+    )
+
+    token = login_response.json()["access_token"]
+
+    response = client.put(
+        "/api/users/me/username",
+        json={
+            "username": "another_user",
+            "current_password": "securepassword123",
+        },
+        headers={"Authorization": f"Bearer {token}"},
+    )
+
+    assert response.status_code == 409
+    assert response.json()["detail"] == "Username already registered."
+
+
+# Requires authentication to change a username.
+def test_change_username_unauthenticated(client):
+    response = client.put(
+        "/api/users/me/username",
+        json={
+            "username": "new_gavin",
+            "current_password": "securepassword123",
+        },
+    )
+
+    assert response.status_code == 401
+
+
+# Rejects usernames shorter than three characters.
+def test_change_username_short_username(client, user):
+    login_response = client.post(
+        "/api/users/login",
+        json={
+            "username": user["username"],
+            "password": "securepassword123",
+        },
+    )
+
+    token = login_response.json()["access_token"]
+
+    response = client.put(
+        "/api/users/me/username",
+        json={
+            "username": "ab",
+            "current_password": "securepassword123",
+        },
+        headers={"Authorization": f"Bearer {token}"},
+    )
+
+    assert response.status_code == 422
+
+
+# Rejects usernames longer than fifty characters.
+def test_change_username_long_username(client, user):
+    login_response = client.post(
+        "/api/users/login",
+        json={
+            "username": user["username"],
+            "password": "securepassword123",
+        },
+    )
+
+    token = login_response.json()["access_token"]
+
+    response = client.put(
+        "/api/users/me/username",
+        json={
+            "username": "a" * 51,
+            "current_password": "securepassword123",
+        },
+        headers={"Authorization": f"Bearer {token}"},
+    )
+
+    assert response.status_code == 422
+
+
+# Rejects usernames containing only whitespace.
+def test_change_username_whitespace_username(client, user):
+    login_response = client.post(
+        "/api/users/login",
+        json={
+            "username": user["username"],
+            "password": "securepassword123",
+        },
+    )
+
+    token = login_response.json()["access_token"]
+
+    response = client.put(
+        "/api/users/me/username",
+        json={
+            "username": "   ",
+            "current_password": "securepassword123",
+        },
+        headers={"Authorization": f"Bearer {token}"},
+    )
+
+    assert response.status_code == 422
+    assert response.json()["detail"] == "Username cannot be empty."
+
+
+# Removes surrounding whitespace when changing a username.
+def test_change_username_trims_whitespace(client, user):
+    login_response = client.post(
+        "/api/users/login",
+        json={
+            "username": user["username"],
+            "password": "securepassword123",
+        },
+    )
+
+    token = login_response.json()["access_token"]
+
+    response = client.put(
+        "/api/users/me/username",
+        json={
+            "username": "  new_gavin  ",
+            "current_password": "securepassword123",
+        },
+        headers={"Authorization": f"Bearer {token}"},
+    )
+
+    assert response.status_code == 200
+
+    profile_response = client.get(
+        "/api/users/me",
+        headers={"Authorization": f"Bearer {token}"},
+    )
+
+    assert profile_response.status_code == 200
+    assert profile_response.json()["username"] == "new_gavin"
+
+
+# Allows logging in with the updated username instead of the old one.
+def test_change_username_login(client, user):
+    login_response = client.post(
+        "/api/users/login",
+        json={
+            "username": user["username"],
+            "password": "securepassword123",
+        },
+    )
+
+    token = login_response.json()["access_token"]
+
+    change_response = client.put(
+        "/api/users/me/username",
+        json={
+            "username": "new_gavin",
+            "current_password": "securepassword123",
+        },
+        headers={"Authorization": f"Bearer {token}"},
+    )
+
+    assert change_response.status_code == 200
+
+    new_login_response = client.post(
+        "/api/users/login",
+        json={
+            "username": "new_gavin",
+            "password": "securepassword123",
+        },
+    )
+
+    old_login_response = client.post(
+        "/api/users/login",
+        json={
+            "username": user["username"],
+            "password": "securepassword123",
+        },
+    )
+
+    assert new_login_response.status_code == 200
+    assert "access_token" in new_login_response.json()
+    assert old_login_response.status_code == 401

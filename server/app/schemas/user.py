@@ -58,6 +58,12 @@ class EmailChangeRequest(BaseModel):
     current_password: str = Field(min_length=1, max_length=128)
 
 
+# Validates the new username and current password submitted when changing a username.
+class UsernameChangeRequest(BaseModel):
+    username: str = Field(min_length=3, max_length=50)
+    current_password: str = Field(min_length=1, max_length=128)
+
+
 # Defines the response returned after successful authentication.
 class TokenResponse(BaseModel):
     access_token: str

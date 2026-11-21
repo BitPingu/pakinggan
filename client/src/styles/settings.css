@@ -5,6 +5,7 @@
   grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 24px;
   align-items: stretch;
+  margin-bottom: 32px;
 }
 
 .settings-section {
@@ -13,6 +14,11 @@
   border: 1px solid #292930;
   border-radius: 12px;
   background: #17171d;
+}
+
+/* Removes extra spacing between grid rows. */
+.settings-grid .settings-section {
+  margin-bottom: 0;
 }
 
 .settings-section h2 {
@@ -134,7 +140,7 @@
 @media (max-width: 600px) {
   .settings-grid {
     grid-template-columns: 1fr;
-    gap: 0;
+    gap: 16px;
   }
 
   .settings-info {
