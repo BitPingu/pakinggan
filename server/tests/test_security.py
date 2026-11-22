@@ -7,7 +7,9 @@ from fastapi import HTTPException
 from app.core.config import settings
 from app.core.security import (
     create_access_token,
+    create_lastfm_state,
     decode_access_token,
+    decode_lastfm_state,
     get_current_user,
     hash_password,
     verify_password,
@@ -123,3 +125,80 @@ def test_get_current_user_nonexistent_user(db_session):
         get_current_user(token, db_session)
 
     assert exc_info.value.status_code == 401
+
+
+# Last.fm authorization state tokens are generated as strings.
+def test_create_lastfm_state():
+    token = create_lastfm_state(1)
+
+    assert isinstance(token, str)
+
+
+# Last.fm authorization state tokens contain the user ID and purpose.
+def test_decode_lastfm_state():
+    token = create_lastfm_state(1)
+
+    user_id = decode_lastfm_state(token)
+
+    assert user_id == 1
+
+
+# Expired Last.fm authorization state tokens cannot be decoded.
+def test_decode_expired_lastfm_state():
+    payload = {
+        "sub": "1",
+        "purpose": "lastfm",
+        "exp": datetime.now(timezone.utc) - timedelta(minutes=1),
+    }
+
+    token = jwt.encode(
+        payload,
+        settings.JWT_SECRET_KEY,
+        algorithm=settings.JWT_ALGORITHM,
+    )
+
+    with pytest.raises(jwt.ExpiredSignatureError):
+        decode_lastfm_state(token)
+
+
+# Last.fm authorization state tokens with an invalid purpose are rejected.
+def test_decode_invalid_lastfm_state_purpose():
+    payload = {
+        "sub": "1",
+        "purpose": "access",
+        "exp": datetime.now(timezone.utc) + timedelta(minutes=10),
+    }
+
+    token = jwt.encode(
+        payload,
+        settings.JWT_SECRET_KEY,
+        algorithm=settings.JWT_ALGORITHM,
+    )
+
+    with pytest.raises(jwt.InvalidTokenError):
+        decode_lastfm_state(token)
+
+
+# Last.fm authorization state tokens with an invalid user ID are rejected.
+@pytest.mark.parametrize("subject", ["invalid", "0", "-1", None])
+def test_decode_invalid_lastfm_state_user_id(subject):
+    payload = {
+        "sub": subject,
+        "purpose": "lastfm",
+        "exp": datetime.now(timezone.utc) + timedelta(minutes=10),
+    }
+
+    token = jwt.encode(
+        payload,
+        settings.JWT_SECRET_KEY,
+        algorithm=settings.JWT_ALGORITHM,
+    )
+
+    with pytest.raises(jwt.InvalidTokenError):
+        decode_lastfm_state(token)
+
+
+# Invalid Last.fm authorization state tokens cannot be decoded.
+def test_decode_invalid_lastfm_state_token():
+    with pytest.raises(jwt.InvalidTokenError):
+        decode_lastfm_state("invalid-token")

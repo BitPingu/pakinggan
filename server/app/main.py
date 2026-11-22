@@ -10,19 +10,21 @@ from app.core.config import settings
 from app.database import engine
 from app.routers.albums import router as albums_router
 from app.routers.artists import router as artists_router
+from app.routers.lastfm import router as lastfm_router
 from app.routers.tracks import router as tracks_router
 from app.routers.users import router as users_router
 
+# Configures application logging.
 logger = logging.getLogger(__name__)
 
-# init fastapi app
+# Initializes the FastAPI application.
 app = FastAPI()
 
 
-# handler for sqlalchemy database exceptions
+# Handles SQLAlchemy database exceptions.
 @app.exception_handler(SQLAlchemyError)
 async def sqlalchemy_exception_handler(request: Request, exc: SQLAlchemyError):
-    # record request path and exception traceback
+    # Logs the request path and exception traceback.
     logger.error(
         "Database error while processing %s %s",
         request.method,
@@ -30,14 +32,14 @@ async def sqlalchemy_exception_handler(request: Request, exc: SQLAlchemyError):
         exc_info=(type(exc), exc, exc.__traceback__),
     )
 
-    # return generic http 500 response
+    # Returns a generic HTTP 500 response.
     return JSONResponse(
         status_code=500,
         content={"detail": "A database error occurred"},
     )
 
 
-# middleware that processes requests and responses
+# Configures cross-origin requests from the frontend.
 app.add_middleware(
     CORSMiddleware,
     allow_origins=[settings.FRONTEND_URL],
@@ -46,26 +48,27 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# register routers
+# Registers the application API routers.
 app.include_router(users_router)
 app.include_router(artists_router)
 app.include_router(albums_router)
 app.include_router(tracks_router)
+app.include_router(lastfm_router)
 
 
-# root endpoint
+# Returns a welcome message from the API.
 @app.get("/")
 def root():
-    return {"message": "Welcome to Pakinggan API"}
+    return {"message": "Welcome to Pakingan API"}
 
 
-# checks whether fastapi is running
+# Checks whether the FastAPI application is running.
 @app.get("/api/health")
 def health_check():
     return {"status": "ok"}
 
 
-# checks postgresql connectivity
+# Checks connectivity to the PostgreSQL database.
 @app.get("/api/db-health")
 def database_health_check():
     with engine.connect() as connection:

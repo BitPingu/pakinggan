@@ -16,8 +16,11 @@ class Settings(BaseSettings):
     LASTFM_SHARED_SECRET: str
     LASTFM_ENCRYPTION_KEY: str
 
-    # Frontend URL used when generating password-reset links.
+    # Frontend URL used for password-reset links and authentication redirects.
     FRONTEND_URL: str = "http://localhost:5173"
+
+    # Backend URL used for external authentication callbacks.
+    BACKEND_URL: str = "http://localhost:8000"
 
     # Email delivery configuration.
     SMTP_HOST: str = "localhost"

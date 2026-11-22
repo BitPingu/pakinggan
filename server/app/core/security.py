@@ -75,6 +75,45 @@ def decode_access_token(token: str) -> dict:
     )
 
 
+# Creates a short-lived JWT for Last.fm authorization.
+def create_lastfm_state(user_id: int) -> str:
+    expires_at = datetime.now(timezone.utc) + timedelta(minutes=10)
+
+    payload = {
+        "sub": str(user_id),
+        "purpose": "lastfm",
+        "exp": expires_at,
+    }
+
+    return jwt.encode(
+        payload,
+        settings.JWT_SECRET_KEY,
+        algorithm=settings.JWT_ALGORITHM,
+    )
+
+
+# Verifies a Last.fm authorization state token and returns the user ID.
+def decode_lastfm_state(token: str) -> int:
+    payload = jwt.decode(
+        token,
+        settings.JWT_SECRET_KEY,
+        algorithms=[settings.JWT_ALGORITHM],
+    )
+
+    if payload.get("purpose") != "lastfm":
+        raise jwt.InvalidTokenError("Invalid Last.fm authorization state.")
+
+    try:
+        user_id = int(payload.get("sub"))
+    except (TypeError, ValueError):
+        raise jwt.InvalidTokenError("Invalid Last.fm authorization state.")
+
+    if user_id <= 0:
+        raise jwt.InvalidTokenError("Invalid Last.fm authorization state.")
+
+    return user_id
+
+
 # Identifies the authenticated user.
 def get_current_user(
     token: str = Depends(oauth2_scheme),
