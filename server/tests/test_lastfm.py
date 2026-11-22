@@ -4,7 +4,12 @@ import httpx
 import pytest
 
 from app.core.config import settings
-from app.core.lastfm import generate_api_signature, get_auth_url, get_session
+from app.core.lastfm import (
+    generate_api_signature,
+    get_auth_url,
+    get_session,
+    make_api_request,
+)
 
 
 # Tests that API signatures are generated correctly.
@@ -243,3 +248,66 @@ async def test_get_session_invalid_response(monkeypatch):
     async with httpx.AsyncClient(transport=transport) as client:
         with pytest.raises(ValueError, match="Invalid Last.fm API response."):
             await get_session("test_token", client)
+
+
+# Successful API requests return the Last.fm response data.
+@pytest.mark.asyncio
+async def test_make_api_request_success():
+    params = {"method": "user.getInfo"}
+
+    mock_response = httpx.Response(
+        200,
+        json={"user": {"name": "radiohead_fan"}},
+    )
+
+    async with httpx.AsyncClient(
+        transport=httpx.MockTransport(lambda request: mock_response)
+    ) as client:
+        data = await make_api_request(params, client)
+
+    assert data == {"user": {"name": "radiohead_fan"}}
+
+
+# Last.fm API errors raise a ValueError.
+@pytest.mark.asyncio
+async def test_make_api_request_api_error():
+    params = {"method": "user.getInfo"}
+
+    mock_response = httpx.Response(
+        200,
+        json={"error": 6, "message": "Invalid parameters"},
+    )
+
+    async with httpx.AsyncClient(
+        transport=httpx.MockTransport(lambda request: mock_response)
+    ) as client:
+        with pytest.raises(ValueError, match="Invalid parameters"):
+            await make_api_request(params, client)
+
+
+# HTTP errors are raised when the API request fails.
+@pytest.mark.asyncio
+async def test_make_api_request_http_error():
+    params = {"method": "user.getInfo"}
+
+    mock_response = httpx.Response(500)
+
+    async with httpx.AsyncClient(
+        transport=httpx.MockTransport(lambda request: mock_response)
+    ) as client:
+        with pytest.raises(httpx.HTTPStatusError):
+            await make_api_request(params, client)
+
+
+# Invalid API responses raise a ValueError.
+@pytest.mark.asyncio
+async def test_make_api_request_invalid_response():
+    params = {"method": "user.getInfo"}
+
+    mock_response = httpx.Response(200, json=["invalid"])
+
+    async with httpx.AsyncClient(
+        transport=httpx.MockTransport(lambda request: mock_response)
+    ) as client:
+        with pytest.raises(ValueError, match="Invalid Last.fm API response"):
+            await make_api_request(params, client)

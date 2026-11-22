@@ -25,20 +25,11 @@ def get_auth_url(callback_url: str) -> str:
     return f"https://www.last.fm/api/auth/?{urlencode(params)}"
 
 
-# Exchanges a Last.fm authentication token for a session key.
-async def get_session(
-    token: str,
+# Sends a request to the Last.fm API.
+async def make_api_request(
+    params: dict[str, str],
     client: httpx.AsyncClient | None = None,
-) -> tuple[str, str]:
-    params = {
-        "method": "auth.getSession",
-        "api_key": settings.LASTFM_API_KEY,
-        "token": token,
-    }
-
-    params["api_sig"] = generate_api_signature(params)
-    params["format"] = "json"
-
+) -> dict:
     # Sends the request using the provided or a temporary HTTP client.
     if client is None:
         async with httpx.AsyncClient() as client:
@@ -64,6 +55,25 @@ async def get_session(
     # Handles errors returned by the Last.fm API.
     if "error" in data:
         raise ValueError(data.get("message", "Last.fm API request failed."))
+
+    return data
+
+
+# Exchanges a Last.fm authentication token for a session key.
+async def get_session(
+    token: str,
+    client: httpx.AsyncClient | None = None,
+) -> tuple[str, str]:
+    params = {
+        "method": "auth.getSession",
+        "api_key": settings.LASTFM_API_KEY,
+        "token": token,
+    }
+
+    params["api_sig"] = generate_api_signature(params)
+    params["format"] = "json"
+
+    data = await make_api_request(params, client)
 
     # Validates the session data returned by Last.fm.
     session = data.get("session")
