@@ -5,6 +5,7 @@ import pytest
 
 from app.core.config import settings
 from app.core.lastfm import (
+    authenticated_api_request,
     generate_api_signature,
     get_auth_url,
     get_session,
@@ -311,3 +312,120 @@ async def test_make_api_request_invalid_response():
     ) as client:
         with pytest.raises(ValueError, match="Invalid Last.fm API response"):
             await make_api_request(params, client)
+
+
+# Authenticated API requests include the required authentication parameters.
+@pytest.mark.asyncio
+async def test_authenticated_api_request(monkeypatch):
+    monkeypatch.setattr(settings, "LASTFM_API_KEY", "test_api_key")
+    monkeypatch.setattr(settings, "LASTFM_SHARED_SECRET", "test_secret")
+
+    async def mock_handler(request):
+        params = dict(request.url.params)
+
+        assert params["method"] == "user.getRecentTracks"
+        assert params["api_key"] == "test_api_key"
+        assert params["sk"] == "test_session_key"
+        assert params["user"] == "radiohead_fan"
+        assert params["limit"] == "10"
+        assert params["format"] == "json"
+
+        expected_signature = generate_api_signature(
+            {
+                "method": "user.getRecentTracks",
+                "api_key": "test_api_key",
+                "sk": "test_session_key",
+                "user": "radiohead_fan",
+                "limit": "10",
+            }
+        )
+
+        assert params["api_sig"] == expected_signature
+
+        return httpx.Response(
+            200,
+            json={"recenttracks": {"track": []}},
+        )
+
+    transport = httpx.MockTransport(mock_handler)
+
+    async with httpx.AsyncClient(transport=transport) as client:
+        data = await authenticated_api_request(
+            session_key="test_session_key",
+            method="user.getRecentTracks",
+            params={"user": "radiohead_fan", "limit": "10"},
+            client=client,
+        )
+
+    assert data == {"recenttracks": {"track": []}}
+
+
+# Last.fm API errors raise a ValueError for authenticated requests.
+@pytest.mark.asyncio
+async def test_authenticated_api_request_api_error(monkeypatch):
+    monkeypatch.setattr(settings, "LASTFM_API_KEY", "test_api_key")
+    monkeypatch.setattr(settings, "LASTFM_SHARED_SECRET", "test_secret")
+
+    async def mock_handler(request):
+        return httpx.Response(
+            200,
+            json={
+                "error": 9,
+                "message": "Invalid session key.",
+            },
+        )
+
+    transport = httpx.MockTransport(mock_handler)
+
+    async with httpx.AsyncClient(transport=transport) as client:
+        with pytest.raises(ValueError, match="Invalid session key."):
+            await authenticated_api_request(
+                session_key="invalid_session_key",
+                method="user.getRecentTracks",
+                client=client,
+            )
+
+
+# HTTP errors are raised for failed authenticated API requests.
+@pytest.mark.asyncio
+async def test_authenticated_api_request_http_error(monkeypatch):
+    monkeypatch.setattr(settings, "LASTFM_API_KEY", "test_api_key")
+    monkeypatch.setattr(settings, "LASTFM_SHARED_SECRET", "test_secret")
+
+    async def mock_handler(request):
+        return httpx.Response(
+            500,
+            json={"message": "Internal Server Error"},
+        )
+
+    transport = httpx.MockTransport(mock_handler)
+
+    async with httpx.AsyncClient(transport=transport) as client:
+        with pytest.raises(httpx.HTTPStatusError):
+            await authenticated_api_request(
+                session_key="test_session_key",
+                method="user.getRecentTracks",
+                client=client,
+            )
+
+# Invalid API responses raise a ValueError for authenticated requests.
+@pytest.mark.asyncio
+async def test_authenticated_api_request_invalid_response(monkeypatch):
+    monkeypatch.setattr(settings, "LASTFM_API_KEY", "test_api_key")
+    monkeypatch.setattr(settings, "LASTFM_SHARED_SECRET", "test_secret")
+
+    async def mock_handler(request):
+        return httpx.Response(200, json=["invalid"])
+
+    transport = httpx.MockTransport(mock_handler)
+
+    async with httpx.AsyncClient(transport=transport) as client:
+        with pytest.raises(
+            ValueError,
+            match="Invalid Last.fm API response.",
+        ):
+            await authenticated_api_request(
+                session_key="test_session_key",
+                method="user.getRecentTracks",
+                client=client,
+            )

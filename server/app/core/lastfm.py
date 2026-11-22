@@ -59,6 +59,26 @@ async def make_api_request(
     return data
 
 
+# Sends an authenticated request to the Last.fm API.
+async def authenticated_api_request(
+    session_key: str,
+    method: str,
+    params: dict[str, str] | None = None,
+    client: httpx.AsyncClient | None = None,
+) -> dict:
+    request_params = {
+        **(params or {}),
+        "method": method,
+        "api_key": settings.LASTFM_API_KEY,
+        "sk": session_key,
+    }
+
+    request_params["api_sig"] = generate_api_signature(request_params)
+    request_params["format"] = "json"
+
+    return await make_api_request(request_params, client)
+
+
 # Exchanges a Last.fm authentication token for a session key.
 async def get_session(
     token: str,
