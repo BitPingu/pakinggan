@@ -408,6 +408,7 @@ async def test_authenticated_api_request_http_error(monkeypatch):
                 client=client,
             )
 
+
 # Invalid API responses raise a ValueError for authenticated requests.
 @pytest.mark.asyncio
 async def test_authenticated_api_request_invalid_response(monkeypatch):

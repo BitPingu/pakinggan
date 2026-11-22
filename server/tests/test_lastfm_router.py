@@ -1,6 +1,7 @@
 from unittest.mock import AsyncMock, patch
 
 import httpx
+import pytest
 from sqlalchemy.exc import SQLAlchemyError
 
 from app.core.security import create_lastfm_state
@@ -485,5 +486,244 @@ def test_disconnect_lastfm_already_disconnected(client, user):
 # Unauthenticated users cannot disconnect a Last.fm account.
 def test_disconnect_lastfm_unauthenticated(client):
     response = client.delete("/api/lastfm/disconnect")
+
+    assert response.status_code == 401
+
+
+# Authenticated users can retrieve their recently played Last.fm tracks.
+@patch(
+    "app.routers.lastfm.make_user_lastfm_request",
+    new_callable=AsyncMock,
+)
+def test_get_recent_tracks(mock_lastfm_request, client, user):
+    mock_lastfm_request.return_value = {
+        "recenttracks": {
+            "track": [
+                {
+                    "name": "Paranoid Android",
+                    "artist": {"#text": "Radiohead"},
+                    "album": {"#text": "OK Computer"},
+                    "url": "https://www.last.fm/music/Radiohead/_/Paranoid+Android",
+                    "image": [
+                        {"#text": "small-image-url"},
+                        {"#text": "large-image-url"},
+                    ],
+                    "date": {"#text": "22 Nov 2026, 12:00"},
+                }
+            ]
+        }
+    }
+
+    # Logs in to obtain an access token.
+    login_response = client.post(
+        "/api/users/login",
+        json={
+            "username": user["username"],
+            "password": "securepassword123",
+        },
+    )
+
+    token = login_response.json()["access_token"]
+
+    response = client.get(
+        "/api/lastfm/recent-tracks",
+        headers={"Authorization": f"Bearer {token}"},
+    )
+
+    assert response.status_code == 200
+    assert response.json() == {
+        "tracks": [
+            {
+                "name": "Paranoid Android",
+                "artist": "Radiohead",
+                "album": "OK Computer",
+                "url": "https://www.last.fm/music/Radiohead/_/Paranoid+Android",
+                "image": "large-image-url",
+                "played_at": "22 Nov 2026, 12:00",
+            }
+        ]
+    }
+
+    mock_lastfm_request.assert_awaited_once_with(
+        user_id=user["id"],
+        method="user.getRecentTracks",
+        db=mock_lastfm_request.call_args.kwargs["db"],
+        params={"limit": "20", "extended": "1"},
+    )
+
+
+# Users without a Last.fm connection cannot retrieve recent tracks.
+@patch(
+    "app.routers.lastfm.make_user_lastfm_request",
+    new_callable=AsyncMock,
+    return_value=None,
+)
+def test_get_recent_tracks_not_connected(mock_lastfm_request, client, user):
+    # Logs in to obtain an access token.
+    login_response = client.post(
+        "/api/users/login",
+        json={
+            "username": user["username"],
+            "password": "securepassword123",
+        },
+    )
+
+    token = login_response.json()["access_token"]
+
+    response = client.get(
+        "/api/lastfm/recent-tracks",
+        headers={"Authorization": f"Bearer {token}"},
+    )
+
+    assert response.status_code == 409
+    assert response.json()["detail"] == "Last.fm account is not connected."
+
+    mock_lastfm_request.assert_awaited_once()
+
+
+# Last.fm API errors return a bad gateway response.
+@patch(
+    "app.routers.lastfm.make_user_lastfm_request",
+    new_callable=AsyncMock,
+    side_effect=ValueError("Last.fm API request failed."),
+)
+def test_get_recent_tracks_api_error(mock_lastfm_request, client, user):
+    # Logs in to obtain an access token.
+    login_response = client.post(
+        "/api/users/login",
+        json={
+            "username": user["username"],
+            "password": "securepassword123",
+        },
+    )
+
+    token = login_response.json()["access_token"]
+
+    response = client.get(
+        "/api/lastfm/recent-tracks",
+        headers={"Authorization": f"Bearer {token}"},
+    )
+
+    assert response.status_code == 502
+    assert response.json()["detail"] == (
+        "Unable to retrieve recent tracks from Last.fm."
+    )
+
+    mock_lastfm_request.assert_awaited_once()
+
+
+# Network failures return a bad gateway response.
+@patch(
+    "app.routers.lastfm.make_user_lastfm_request",
+    new_callable=AsyncMock,
+    side_effect=httpx.ConnectError("Connection failed."),
+)
+def test_get_recent_tracks_connection_error(
+    mock_lastfm_request,
+    client,
+    user,
+):
+    # Logs in to obtain an access token.
+    login_response = client.post(
+        "/api/users/login",
+        json={
+            "username": user["username"],
+            "password": "securepassword123",
+        },
+    )
+
+    token = login_response.json()["access_token"]
+
+    response = client.get(
+        "/api/lastfm/recent-tracks",
+        headers={"Authorization": f"Bearer {token}"},
+    )
+
+    assert response.status_code == 502
+    assert response.json()["detail"] == (
+        "Unable to retrieve recent tracks from Last.fm."
+    )
+
+    mock_lastfm_request.assert_awaited_once()
+
+
+# Invalid Last.fm response structures return a bad gateway response.
+@pytest.mark.parametrize(
+    "api_response",
+    [
+        {},
+        {"recenttracks": []},
+        {"recenttracks": {"track": {}}},
+        {"recenttracks": {"track": ["invalid-track"]}},
+        {"recenttracks": {"track": [{"artist": "Radiohead"}]}},
+        {"recenttracks": {"track": [{"artist": {}, "image": "invalid-image"}]}},
+    ],
+)
+@patch(
+    "app.routers.lastfm.make_user_lastfm_request",
+    new_callable=AsyncMock,
+)
+def test_get_recent_tracks_invalid_response(
+    mock_lastfm_request,
+    client,
+    user,
+    api_response,
+):
+    mock_lastfm_request.return_value = api_response
+
+    # Logs in to obtain an access token.
+    login_response = client.post(
+        "/api/users/login",
+        json={
+            "username": user["username"],
+            "password": "securepassword123",
+        },
+    )
+
+    token = login_response.json()["access_token"]
+
+    response = client.get(
+        "/api/lastfm/recent-tracks",
+        headers={"Authorization": f"Bearer {token}"},
+    )
+
+    assert response.status_code == 502
+    assert response.json()["detail"] == "Invalid response from Last.fm."
+
+    mock_lastfm_request.assert_awaited_once()
+
+
+# Users with no recent tracks receive an empty track list.
+@patch(
+    "app.routers.lastfm.make_user_lastfm_request",
+    new_callable=AsyncMock,
+    return_value={"recenttracks": {"track": []}},
+)
+def test_get_recent_tracks_empty(mock_lastfm_request, client, user):
+    # Logs in to obtain an access token.
+    login_response = client.post(
+        "/api/users/login",
+        json={
+            "username": user["username"],
+            "password": "securepassword123",
+        },
+    )
+
+    token = login_response.json()["access_token"]
+
+    response = client.get(
+        "/api/lastfm/recent-tracks",
+        headers={"Authorization": f"Bearer {token}"},
+    )
+
+    assert response.status_code == 200
+    assert response.json() == {"tracks": []}
+
+    mock_lastfm_request.assert_awaited_once()
+
+
+# Unauthenticated users cannot retrieve recent tracks.
+def test_get_recent_tracks_unauthenticated(client):
+    response = client.get("/api/lastfm/recent-tracks")
 
     assert response.status_code == 401

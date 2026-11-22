@@ -10,83 +10,78 @@ from app.database import Base, get_db
 from app.main import app
 
 
-# provide a db connection in every test (shared across the test run)
-# Connects to pakinggan_test and prepares tables once
+# Creates a database engine for the test session.
 @pytest.fixture(scope="session")
 def test_engine():
-    # check test db url
+    # Verifies that the test database URL is configured.
     if not settings.TEST_DATABASE_URL:
         pytest.fail("TEST_DATABASE_URL is not configured in .env")
 
-    # extract db name
+    # Extracts and validates the test database name.
     database_name = make_url(settings.TEST_DATABASE_URL).database
 
-    # verify db name
     if database_name != "pakinggan_test":
         pytest.fail(
             "Refusing to run tests: TEST_DATABASE_URL must point to pakinggan_test"
         )
 
-    # create sqlalchemy engine connected to db
+    # Creates an engine connected to the test database.
     engine = create_engine(settings.TEST_DATABASE_URL)
 
-    # Recreate the schema in the dedicated test database.
-    # each new pytest run starts with an empty set of tables
-    Base.metadata.drop_all(bind=engine)  # remove tables
-    Base.metadata.create_all(bind=engine)  # create tables
+    # Recreates the database schema before running tests.
+    Base.metadata.drop_all(bind=engine)
+    Base.metadata.create_all(bind=engine)
 
-    # setup then teardown
     yield engine
 
-    # Clean up after the test session.
-    Base.metadata.drop_all(bind=engine)  # remove test tables
-    engine.dispose()  # dispose resources
+    # Removes the test tables and releases the engine resources.
+    Base.metadata.drop_all(bind=engine)
+    engine.dispose()
 
 
-# provide a db session to individual tests
-# Creates a new transaction for each test
+# Creates an isolated database session for each test.
 @pytest.fixture
 def db_session(test_engine):
-    connection = test_engine.connect()  # open connection to postgresql
-    transaction = connection.begin()  # begin db transaction
+    connection = test_engine.connect()
+    transaction = connection.begin()
 
-    # create sqlalchemy session
+    # Creates a session that uses a savepoint within the test transaction.
     session = Session(
         bind=connection,
-        # Use a savepoint within the existing transaction.
         join_transaction_mode="create_savepoint",
     )
 
     try:
-        yield session  # receive the session
+        yield session
     finally:
-        session.close()  # close the sqlalchemy session
-        transaction.rollback()  # undo changes in outer transaction
-        connection.close()  # release the db connection
+        # Closes the session and rolls back the test transaction.
+        session.close()
+        transaction.rollback()
+        connection.close()
 
 
-# provide a fastapi test client
-# Overrides get_db and creates the FastAPI test client
+# Creates a FastAPI test client with an overridden database dependency.
 @pytest.fixture
 def client(db_session):
     def override_get_db():
         try:
-            yield db_session  # provide the test session
+            yield db_session
         except Exception:
-            db_session.rollback()  # revert transaction for the test
+            db_session.rollback()
             raise
 
-    # override get_db with override_get_db
+    # Overrides the database dependency for the duration of the test.
     app.dependency_overrides[get_db] = override_get_db
 
     try:
         with TestClient(app) as test_client:
-            yield test_client  # create a client that can send requests to app
+            yield test_client
     finally:
-        app.dependency_overrides.clear()  # remove dependency overrides
+        # Removes the dependency override after the test.
+        app.dependency_overrides.clear()
 
 
-# creates a test user
+# Creates a test user.
 @pytest.fixture
 def user(client):
     response = client.post(
@@ -100,7 +95,7 @@ def user(client):
     return response.json()
 
 
-# creates a test artist
+# Creates a test artist.
 @pytest.fixture
 def artist(client):
     response = client.post(
@@ -110,7 +105,7 @@ def artist(client):
     return response.json()
 
 
-# creates a test album associated with the artist
+# Creates a test album associated with the test artist.
 @pytest.fixture
 def album(client, artist):
     response = client.post(
