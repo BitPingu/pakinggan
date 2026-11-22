@@ -351,3 +351,139 @@ def test_callback_lastfm_connection_error(mock_get_session, client, user):
     assert response.headers["location"].endswith("/?lastfm=error")
 
     mock_get_session.assert_awaited_once_with("mock-token")
+
+
+# Authenticated users without a Last.fm connection receive a disconnected status.
+def test_get_lastfm_status_disconnected(client, user):
+    # Logs in to obtain an access token.
+    login_response = client.post(
+        "/api/users/login",
+        json={
+            "username": user["username"],
+            "password": "securepassword123",
+        },
+    )
+
+    token = login_response.json()["access_token"]
+
+    response = client.get(
+        "/api/lastfm/status",
+        headers={"Authorization": f"Bearer {token}"},
+    )
+
+    assert response.status_code == 200
+    assert response.json() == {
+        "connected": False,
+        "lastfm_username": None,
+    }
+
+
+# Authenticated users with a Last.fm connection receive a connected status.
+def test_get_lastfm_status_connected(client, user, db_session):
+    # Creates an existing Last.fm connection.
+    connection = LastFMConnection(
+        user_id=user["id"],
+        lastfm_username="radiohead_fan",
+        session_key="encrypted-session-key",
+    )
+
+    db_session.add(connection)
+    db_session.commit()
+
+    # Logs in to obtain an access token.
+    login_response = client.post(
+        "/api/users/login",
+        json={
+            "username": user["username"],
+            "password": "securepassword123",
+        },
+    )
+
+    token = login_response.json()["access_token"]
+
+    response = client.get(
+        "/api/lastfm/status",
+        headers={"Authorization": f"Bearer {token}"},
+    )
+
+    assert response.status_code == 200
+    assert response.json() == {
+        "connected": True,
+        "lastfm_username": "radiohead_fan",
+    }
+
+
+# Unauthenticated users cannot retrieve their Last.fm connection status.
+def test_get_lastfm_status_unauthenticated(client):
+    response = client.get("/api/lastfm/status")
+
+    assert response.status_code == 401
+
+
+# Authenticated users can disconnect their Last.fm account.
+def test_disconnect_lastfm(client, user, db_session):
+    # Creates an existing Last.fm connection.
+    connection = LastFMConnection(
+        user_id=user["id"],
+        lastfm_username="radiohead_fan",
+        session_key="encrypted-session-key",
+    )
+
+    db_session.add(connection)
+    db_session.commit()
+
+    # Logs in to obtain an access token.
+    login_response = client.post(
+        "/api/users/login",
+        json={
+            "username": user["username"],
+            "password": "securepassword123",
+        },
+    )
+
+    token = login_response.json()["access_token"]
+
+    response = client.delete(
+        "/api/lastfm/disconnect",
+        headers={"Authorization": f"Bearer {token}"},
+    )
+
+    assert response.status_code == 204
+    assert response.content == b""
+
+    # Verifies the Last.fm connection was deleted.
+    assert (
+        db_session.query(LastFMConnection)
+        .filter(LastFMConnection.user_id == user["id"])
+        .first()
+        is None
+    )
+
+
+# Users can disconnect even when no Last.fm connection exists.
+def test_disconnect_lastfm_already_disconnected(client, user):
+    # Logs in to obtain an access token.
+    login_response = client.post(
+        "/api/users/login",
+        json={
+            "username": user["username"],
+            "password": "securepassword123",
+        },
+    )
+
+    token = login_response.json()["access_token"]
+
+    response = client.delete(
+        "/api/lastfm/disconnect",
+        headers={"Authorization": f"Bearer {token}"},
+    )
+
+    assert response.status_code == 204
+    assert response.content == b""
+
+
+# Unauthenticated users cannot disconnect a Last.fm account.
+def test_disconnect_lastfm_unauthenticated(client):
+    response = client.delete("/api/lastfm/disconnect")
+
+    assert response.status_code == 401

@@ -3,7 +3,7 @@ import secrets
 import httpx
 import jwt
 from fastapi import APIRouter, Depends, HTTPException, Request, status
-from fastapi.responses import RedirectResponse
+from fastapi.responses import RedirectResponse, Response
 from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.orm import Session
 
@@ -18,6 +18,7 @@ from app.core.security import (
 from app.database import get_db
 from app.models.lastfm_connection import LastFMConnection
 from app.models.user import User
+from app.schemas.lastfm import LastFMStatus
 
 # Defines the Last.fm API routes.
 router = APIRouter(
@@ -85,6 +86,44 @@ def connect_lastfm(current_user: User = Depends(get_current_user)):
     )
 
     return response
+
+
+# Returns the authenticated user's Last.fm connection status.
+@router.get("/status", response_model=LastFMStatus)
+def get_lastfm_status(
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    connection = (
+        db.query(LastFMConnection)
+        .filter(LastFMConnection.user_id == current_user.id)
+        .first()
+    )
+
+    return LastFMStatus(
+        connected=connection is not None,
+        lastfm_username=(connection.lastfm_username if connection else None),
+    )
+
+
+# Disconnects the authenticated user's Last.fm account.
+@router.delete("/disconnect", status_code=status.HTTP_204_NO_CONTENT)
+def disconnect_lastfm(
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    connection = (
+        db.query(LastFMConnection)
+        .filter(LastFMConnection.user_id == current_user.id)
+        .first()
+    )
+
+    # Deletes the user's Last.fm connection if one exists.
+    if connection:
+        db.delete(connection)
+        db.commit()
+
+    return Response(status_code=status.HTTP_204_NO_CONTENT)
 
 
 # Handles the callback after Last.fm authorization.
