@@ -11,6 +11,11 @@ class Settings(BaseSettings):
     JWT_ALGORITHM: str = "HS256"
     ACCESS_TOKEN_EXPIRE_MINUTES: int = 30
 
+    # Last.fm API configuration.
+    LASTFM_API_KEY: str
+    LASTFM_SHARED_SECRET: str
+    LASTFM_ENCRYPTION_KEY: str
+
     # Frontend URL used when generating password-reset links.
     FRONTEND_URL: str = "http://localhost:5173"
 
