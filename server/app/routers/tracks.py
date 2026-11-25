@@ -37,14 +37,15 @@ def get_track(track_id: int, db: Session = Depends(get_db)):
 # Creates a new track.
 @router.post("/", response_model=TrackResponse, status_code=201)
 def create_track(track: TrackCreate, db: Session = Depends(get_db)):
-    # Ensures the associated album exists.
-    db_album = db.query(Album).filter(Album.id == track.album_id).first()
+    # Ensures the associated album exists when an album ID is provided.
+    if track.album_id is not None:
+        db_album = db.query(Album).filter(Album.id == track.album_id).first()
 
-    if db_album is None:
-        raise HTTPException(
-            status_code=404,
-            detail="Album not found",
-        )
+        if db_album is None:
+            raise HTTPException(
+                status_code=404,
+                detail="Album not found",
+            )
 
     db_track = Track(
         title=track.title,
@@ -75,14 +76,15 @@ def update_track(
             detail="Track not found",
         )
 
-    # Ensures the associated album exists.
-    db_album = db.query(Album).filter(Album.id == track.album_id).first()
+    # Ensures the associated album exists when an album ID is provided.
+    if track.album_id is not None:
+        db_album = db.query(Album).filter(Album.id == track.album_id).first()
 
-    if db_album is None:
-        raise HTTPException(
-            status_code=404,
-            detail="Album not found",
-        )
+        if db_album is None:
+            raise HTTPException(
+                status_code=404,
+                detail="Album not found",
+            )
 
     db_track.title = track.title
     db_track.duration = track.duration

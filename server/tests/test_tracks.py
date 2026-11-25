@@ -105,6 +105,22 @@ def test_create_track_without_duration(client, album):
     assert response.json()["duration"] is None
 
 
+# creates a track without an album
+def test_create_track_without_album(client):
+    response = client.post(
+        "/api/tracks/",
+        json={
+            "title": "Street Spirit (Fade Out)",
+            "duration": 251,
+        },
+    )
+
+    assert response.status_code == 201
+    assert response.json()["title"] == "Street Spirit (Fade Out)"
+    assert response.json()["duration"] == 251
+    assert response.json()["album_id"] is None
+
+
 # retrieving all tracks
 def test_get_tracks(client, album):
     # create tracks associated with the album
@@ -432,6 +448,32 @@ def test_update_track_album(client, album):
 
     assert response.status_code == 200
     assert response.json()["album_id"] == new_album_id
+
+
+# removes the album association from a track
+def test_update_track_without_album(client, album):
+    create_response = client.post(
+        "/api/tracks/",
+        json={
+            "title": "Paranoid Android",
+            "duration": 383,
+            "album_id": album["id"],
+        },
+    )
+    track_id = create_response.json()["id"]
+
+    response = client.put(
+        f"/api/tracks/{track_id}",
+        json={
+            "title": "Paranoid Android",
+            "duration": 383,
+            "album_id": None,
+        },
+    )
+
+    assert response.status_code == 200
+    assert response.json()["id"] == track_id
+    assert response.json()["album_id"] is None
 
 
 # deleting a track
