@@ -38,4 +38,9 @@ class LastFMConnection(Base):
         nullable=False,
     )
 
+    last_synced_at: Mapped[datetime | None] = mapped_column(
+        DateTime(timezone=True),
+        nullable=True,
+    )
+
     user: Mapped["User"] = relationship(back_populates="lastfm_connection")
