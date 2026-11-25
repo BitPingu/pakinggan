@@ -5,6 +5,7 @@ from pydantic import BaseModel, ConfigDict, Field, field_validator
 class TrackCreate(BaseModel):
     title: str = Field(min_length=1, max_length=255)
     duration: int | None = Field(default=None, ge=0)
+    artist_id: int = Field(gt=0)
     album_id: int | None = Field(default=None, gt=0)
 
     # Removes surrounding whitespace and ensures the title is not empty.
@@ -23,6 +24,7 @@ class TrackCreate(BaseModel):
 class TrackUpdate(BaseModel):
     title: str = Field(min_length=1, max_length=255)
     duration: int | None = Field(default=None, ge=0)
+    artist_id: int = Field(gt=0)
     album_id: int | None = Field(default=None, gt=0)
 
     # Removes surrounding whitespace and ensures the title is not empty.
@@ -42,6 +44,7 @@ class TrackResponse(BaseModel):
     id: int
     title: str
     duration: int | None
+    artist_id: int
     album_id: int | None
 
     # Allows the schema to read data from ORM model attributes.

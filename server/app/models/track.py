@@ -7,10 +7,11 @@ from app.database import Base
 
 if TYPE_CHECKING:
     from app.models.album import Album
+    from app.models.artist import Artist
     from app.models.listening_history import ListeningHistory
 
 
-# Represents a track in an album.
+# Represents a track belonging to an artist and optionally an album.
 class Track(Base):
     __tablename__ = "tracks"
 
@@ -18,11 +19,17 @@ class Track(Base):
     title: Mapped[str] = mapped_column(String(255), nullable=False)
     duration: Mapped[int | None] = mapped_column(nullable=True)
 
+    artist_id: Mapped[int] = mapped_column(
+        ForeignKey("artists.id"),
+        nullable=False,
+    )
+
     album_id: Mapped[int | None] = mapped_column(
         ForeignKey("albums.id"),
         nullable=True,
     )
 
+    artist: Mapped["Artist"] = relationship(back_populates="tracks")
     album: Mapped["Album"] = relationship(back_populates="tracks")
 
     listening_history: Mapped[list["ListeningHistory"]] = relationship(

@@ -126,6 +126,7 @@ def track(client, album):
         json={
             "title": "Paranoid Android",
             "duration": 383,
+            "artist_id": album["artist_id"],
             "album_id": album["id"],
         },
     )

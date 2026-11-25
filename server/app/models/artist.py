@@ -7,6 +7,7 @@ from app.database import Base
 
 if TYPE_CHECKING:
     from app.models.album import Album
+    from app.models.track import Track
 
 
 # Represents an artist in the music library.
@@ -17,3 +18,4 @@ class Artist(Base):
     name: Mapped[str] = mapped_column(String(255), nullable=False)
 
     albums: Mapped[list["Album"]] = relationship(back_populates="artist")
+    tracks: Mapped[list["Track"]] = relationship(back_populates="artist")

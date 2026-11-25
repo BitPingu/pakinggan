@@ -237,6 +237,7 @@ def test_delete_album_with_tracks(client, album):
         json={
             "title": "Paranoid Android",
             "duration": 383,
+            "artist_id": album["artist_id"],
             "album_id": album["id"],
         },
     )
@@ -263,6 +264,7 @@ def test_get_album_tracks(client, album):
         json={
             "title": "Paranoid Android",
             "duration": 383,
+            "artist_id": album["artist_id"],
             "album_id": album["id"],
         },
     )
@@ -271,6 +273,7 @@ def test_get_album_tracks(client, album):
         json={
             "title": "Karma Police",
             "duration": 261,
+            "artist_id": album["artist_id"],
             "album_id": album["id"],
         },
     )

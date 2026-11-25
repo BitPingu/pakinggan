@@ -5,6 +5,7 @@ def test_create_track(client, album):
         json={
             "title": "Paranoid Android",
             "duration": 383,
+            "artist_id": album["artist_id"],
             "album_id": album["id"],
         },
     )
@@ -12,6 +13,7 @@ def test_create_track(client, album):
     assert response.status_code == 201
     assert response.json()["title"] == "Paranoid Android"
     assert response.json()["duration"] == 383
+    assert response.json()["artist_id"] == album["artist_id"]
     assert response.json()["album_id"] == album["id"]
     assert "id" in response.json()
 
@@ -23,11 +25,12 @@ def test_create_track_empty_title(client, album):
         json={
             "title": "",
             "duration": 383,
+            "artist_id": album["artist_id"],
             "album_id": album["id"],
         },
     )
 
-    # rejected by min_length=1
+    # Rejected by min_length=1.
     assert response.status_code == 422
 
 
@@ -38,11 +41,12 @@ def test_create_track_whitespace_title(client, album):
         json={
             "title": "   ",
             "duration": 383,
+            "artist_id": album["artist_id"],
             "album_id": album["id"],
         },
     )
 
-    # rejected by trim
+    # Rejected by trimming.
     assert response.status_code == 422
 
 
@@ -53,36 +57,39 @@ def test_create_track_negative_duration(client, album):
         json={
             "title": "Paranoid Android",
             "duration": -1,
+            "artist_id": album["artist_id"],
             "album_id": album["id"],
         },
     )
 
-    # rejected by ge=0
+    # Rejected by ge=0.
     assert response.status_code == 422
 
 
-# invalid id
-def test_create_track_invalid_album_id(client):
+# invalid ID
+def test_create_track_invalid_album_id(client, album):
     response = client.post(
         "/api/tracks/",
         json={
             "title": "Paranoid Android",
             "duration": 383,
+            "artist_id": album["artist_id"],
             "album_id": 0,
         },
     )
 
-    # rejected by gt=0
+    # Rejected by gt=0.
     assert response.status_code == 422
 
 
 # nonexistent album
-def test_create_track_album_not_found(client):
+def test_create_track_album_not_found(client, album):
     response = client.post(
         "/api/tracks/",
         json={
             "title": "Paranoid Android",
             "duration": 383,
+            "artist_id": album["artist_id"],
             "album_id": 9999,
         },
     )
@@ -91,12 +98,52 @@ def test_create_track_album_not_found(client):
     assert response.json() == {"detail": "Album not found"}
 
 
+# nonexistent artist
+def test_create_track_artist_not_found(client):
+    response = client.post(
+        "/api/tracks/",
+        json={
+            "title": "Paranoid Android",
+            "duration": 383,
+            "artist_id": 9999,
+        },
+    )
+
+    assert response.status_code == 404
+    assert response.json() == {"detail": "Artist not found"}
+
+
+# album belongs to a different artist
+def test_create_track_album_artist_mismatch(client, album):
+    artist_response = client.post(
+        "/api/artists/",
+        json={"name": "Thom Yorke"},
+    )
+    different_artist_id = artist_response.json()["id"]
+
+    response = client.post(
+        "/api/tracks/",
+        json={
+            "title": "Paranoid Android",
+            "duration": 383,
+            "artist_id": different_artist_id,
+            "album_id": album["id"],
+        },
+    )
+
+    assert response.status_code == 400
+    assert response.json() == {
+        "detail": "Album does not belong to the specified artist"
+    }
+
+
 # optional duration
 def test_create_track_without_duration(client, album):
     response = client.post(
         "/api/tracks/",
         json={
             "title": "Paranoid Android",
+            "artist_id": album["artist_id"],
             "album_id": album["id"],
         },
     )
@@ -106,29 +153,32 @@ def test_create_track_without_duration(client, album):
 
 
 # creates a track without an album
-def test_create_track_without_album(client):
+def test_create_track_without_album(client, album):
     response = client.post(
         "/api/tracks/",
         json={
             "title": "Street Spirit (Fade Out)",
             "duration": 251,
+            "artist_id": album["artist_id"],
         },
     )
 
     assert response.status_code == 201
     assert response.json()["title"] == "Street Spirit (Fade Out)"
     assert response.json()["duration"] == 251
+    assert response.json()["artist_id"] == album["artist_id"]
     assert response.json()["album_id"] is None
 
 
 # retrieving all tracks
 def test_get_tracks(client, album):
-    # create tracks associated with the album
+    # Create tracks associated with the album.
     client.post(
         "/api/tracks/",
         json={
             "title": "Paranoid Android",
             "duration": 383,
+            "artist_id": album["artist_id"],
             "album_id": album["id"],
         },
     )
@@ -137,11 +187,12 @@ def test_get_tracks(client, album):
         json={
             "title": "Karma Police",
             "duration": 261,
+            "artist_id": album["artist_id"],
             "album_id": album["id"],
         },
     )
 
-    # verify correct tracks
+    # Verify correct tracks.
     response = client.get("/api/tracks/")
 
     assert response.status_code == 200
@@ -167,24 +218,26 @@ def test_get_track(client, album):
         json={
             "title": "Paranoid Android",
             "duration": 383,
+            "artist_id": album["artist_id"],
             "album_id": album["id"],
         },
     )
     track_id = create_response.json()["id"]
 
-    # verify correct track
+    # Verify correct track.
     response = client.get(f"/api/tracks/{track_id}")
 
     assert response.status_code == 200
     assert response.json()["id"] == track_id
     assert response.json()["title"] == "Paranoid Android"
     assert response.json()["duration"] == 383
+    assert response.json()["artist_id"] == album["artist_id"]
     assert response.json()["album_id"] == album["id"]
 
 
 # track doesn't exist
 def test_get_track_not_found(client):
-    # verify unknown track
+    # Verify unknown track.
     response = client.get("/api/tracks/9999")
 
     assert response.status_code == 404
@@ -198,17 +251,19 @@ def test_update_track(client, album):
         json={
             "title": "Paranoid Android",
             "duration": 383,
+            "artist_id": album["artist_id"],
             "album_id": album["id"],
         },
     )
     track_id = create_response.json()["id"]
 
-    # attempt to update the track
+    # Attempt to update the track.
     response = client.put(
         f"/api/tracks/{track_id}",
         json={
             "title": "Karma Police",
             "duration": 261,
+            "artist_id": album["artist_id"],
             "album_id": album["id"],
         },
     )
@@ -217,17 +272,19 @@ def test_update_track(client, album):
     assert response.json()["id"] == track_id
     assert response.json()["title"] == "Karma Police"
     assert response.json()["duration"] == 261
+    assert response.json()["artist_id"] == album["artist_id"]
     assert response.json()["album_id"] == album["id"]
 
 
 # updating a track that doesn't exist
 def test_update_track_not_found(client, album):
-    # attempt to update the track
+    # Attempt to update the track.
     response = client.put(
         "/api/tracks/9999",
         json={
             "title": "Karma Police",
             "duration": 261,
+            "artist_id": album["artist_id"],
             "album_id": album["id"],
         },
     )
@@ -243,23 +300,65 @@ def test_update_track_album_not_found(client, album):
         json={
             "title": "Paranoid Android",
             "duration": 383,
+            "artist_id": album["artist_id"],
             "album_id": album["id"],
         },
     )
     track_id = create_response.json()["id"]
 
-    # attempt to update the track
+    # Attempt to update the track.
     response = client.put(
         f"/api/tracks/{track_id}",
         json={
             "title": "Karma Police",
             "duration": 261,
+            "artist_id": album["artist_id"],
             "album_id": 9999,
         },
     )
 
     assert response.status_code == 404
     assert response.json() == {"detail": "Album not found"}
+
+
+# updating a track with a nonexistent artist
+def test_update_track_artist_not_found(client, track, album):
+    response = client.put(
+        f"/api/tracks/{track['id']}",
+        json={
+            "title": "Karma Police",
+            "duration": 261,
+            "artist_id": 9999,
+            "album_id": album["id"],
+        },
+    )
+
+    assert response.status_code == 404
+    assert response.json() == {"detail": "Artist not found"}
+
+
+# updating a track with an album belonging to a different artist
+def test_update_track_album_artist_mismatch(client, track, album):
+    artist_response = client.post(
+        "/api/artists/",
+        json={"name": "Thom Yorke"},
+    )
+    different_artist_id = artist_response.json()["id"]
+
+    response = client.put(
+        f"/api/tracks/{track['id']}",
+        json={
+            "title": "Karma Police",
+            "duration": 261,
+            "artist_id": different_artist_id,
+            "album_id": album["id"],
+        },
+    )
+
+    assert response.status_code == 400
+    assert response.json() == {
+        "detail": "Album does not belong to the specified artist"
+    }
 
 
 # updating a track with invalid data
@@ -269,17 +368,19 @@ def test_update_track_empty_title(client, album):
         json={
             "title": "Paranoid Android",
             "duration": 383,
+            "artist_id": album["artist_id"],
             "album_id": album["id"],
         },
     )
     track_id = create_response.json()["id"]
 
-    # attempt to update the track
+    # Attempt to update the track.
     response = client.put(
         f"/api/tracks/{track_id}",
         json={
             "title": "",
             "duration": 383,
+            "artist_id": album["artist_id"],
             "album_id": album["id"],
         },
     )
@@ -294,6 +395,7 @@ def test_update_track_whitespace_title(client, album):
         json={
             "title": "Paranoid Android",
             "duration": 383,
+            "artist_id": album["artist_id"],
             "album_id": album["id"],
         },
     )
@@ -304,6 +406,7 @@ def test_update_track_whitespace_title(client, album):
         json={
             "title": "   ",
             "duration": 383,
+            "artist_id": album["artist_id"],
             "album_id": album["id"],
         },
     )
@@ -318,6 +421,7 @@ def test_update_track_invalid_album_id(client, album):
         json={
             "title": "Paranoid Android",
             "duration": 383,
+            "artist_id": album["artist_id"],
             "album_id": album["id"],
         },
     )
@@ -328,6 +432,7 @@ def test_update_track_invalid_album_id(client, album):
         json={
             "title": "Paranoid Android",
             "duration": 383,
+            "artist_id": album["artist_id"],
             "album_id": 0,
         },
     )
@@ -342,17 +447,19 @@ def test_update_track_negative_duration(client, album):
         json={
             "title": "Paranoid Android",
             "duration": 383,
+            "artist_id": album["artist_id"],
             "album_id": album["id"],
         },
     )
     track_id = create_response.json()["id"]
 
-    # attempt to update the track
+    # Attempt to update the track.
     response = client.put(
         f"/api/tracks/{track_id}",
         json={
             "title": "Paranoid Android",
             "duration": -1,
+            "artist_id": album["artist_id"],
             "album_id": album["id"],
         },
     )
@@ -367,6 +474,7 @@ def test_update_track_without_duration(client, album):
         json={
             "title": "Paranoid Android",
             "duration": 383,
+            "artist_id": album["artist_id"],
             "album_id": album["id"],
         },
     )
@@ -376,6 +484,7 @@ def test_update_track_without_duration(client, album):
         f"/api/tracks/{track_id}",
         json={
             "title": "Paranoid Android",
+            "artist_id": album["artist_id"],
             "album_id": album["id"],
         },
     )
@@ -391,6 +500,7 @@ def test_update_track_invalid_data_unchanged(client, album):
         json={
             "title": "Paranoid Android",
             "duration": 383,
+            "artist_id": album["artist_id"],
             "album_id": album["id"],
         },
     )
@@ -401,6 +511,7 @@ def test_update_track_invalid_data_unchanged(client, album):
         json={
             "title": "",
             "duration": 383,
+            "artist_id": album["artist_id"],
             "album_id": album["id"],
         },
     )
@@ -421,12 +532,13 @@ def test_update_track_album(client, album):
         json={
             "title": "Paranoid Android",
             "duration": 383,
+            "artist_id": album["artist_id"],
             "album_id": album["id"],
         },
     )
     track_id = create_response.json()["id"]
 
-    # creates an album associated with the artist
+    # Creates an album associated with the same artist.
     new_album_response = client.post(
         "/api/albums/",
         json={
@@ -436,12 +548,13 @@ def test_update_track_album(client, album):
     )
     new_album_id = new_album_response.json()["id"]
 
-    # attempt to update the track
+    # Attempt to update the track.
     response = client.put(
         f"/api/tracks/{track_id}",
         json={
             "title": "Paranoid Android",
             "duration": 383,
+            "artist_id": album["artist_id"],
             "album_id": new_album_id,
         },
     )
@@ -457,6 +570,7 @@ def test_update_track_without_album(client, album):
         json={
             "title": "Paranoid Android",
             "duration": 383,
+            "artist_id": album["artist_id"],
             "album_id": album["id"],
         },
     )
@@ -467,6 +581,7 @@ def test_update_track_without_album(client, album):
         json={
             "title": "Paranoid Android",
             "duration": 383,
+            "artist_id": album["artist_id"],
             "album_id": None,
         },
     )
@@ -483,17 +598,18 @@ def test_delete_track(client, album):
         json={
             "title": "Paranoid Android",
             "duration": 383,
+            "artist_id": album["artist_id"],
             "album_id": album["id"],
         },
     )
     track_id = create_response.json()["id"]
 
-    # attempt to delete the track
+    # Attempt to delete the track.
     response = client.delete(f"/api/tracks/{track_id}")
 
     assert response.status_code == 204
 
-    # verify deletion
+    # Verify deletion.
     get_response = client.get(f"/api/tracks/{track_id}")
 
     assert get_response.status_code == 404
@@ -502,7 +618,7 @@ def test_delete_track(client, album):
 
 # deleting a track that doesn't exist
 def test_delete_track_not_found(client):
-    # attempt to delete the track
+    # Attempt to delete the track.
     response = client.delete("/api/tracks/9999")
 
     assert response.status_code == 404
