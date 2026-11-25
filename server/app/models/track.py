@@ -18,7 +18,10 @@ class Track(Base):
     title: Mapped[str] = mapped_column(String(255), nullable=False)
     duration: Mapped[int | None] = mapped_column(nullable=True)
 
-    album_id: Mapped[int] = mapped_column(ForeignKey("albums.id"), nullable=False)
+    album_id: Mapped[int | None] = mapped_column(
+        ForeignKey("albums.id"),
+        nullable=True,
+    )
 
     album: Mapped["Album"] = relationship(back_populates="tracks")
 
