@@ -195,6 +195,7 @@ async def get_recent_tracks(
             "url": track.get("url"),
             "image": (track["image"][-1].get("#text") if track.get("image") else None),
             "played_at": (track.get("date") or {}).get("#text"),
+            "uts": (track.get("date") or {}).get("uts"),
         }
         for track in recent_tracks
     ]

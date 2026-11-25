@@ -540,6 +540,7 @@ def test_get_recent_tracks(mock_lastfm_request, client, user):
                 "url": "https://www.last.fm/music/Radiohead/_/Paranoid+Android",
                 "image": "large-image-url",
                 "played_at": "22 Nov 2026, 12:00",
+                "nowplaying": False,
             }
         ]
     }

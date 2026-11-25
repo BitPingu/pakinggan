@@ -1,4 +1,4 @@
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 
 # Represents the user's Last.fm connection status.
@@ -15,6 +15,8 @@ class LastFMTrack(BaseModel):
     url: str | None = None
     image: str | None = None
     played_at: str | None = None
+    uts: str | None = Field(default=None, exclude=True)
+    nowplaying: bool = False
 
 
 # Represents the user's recent Last.fm tracks.

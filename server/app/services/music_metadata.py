@@ -10,9 +10,7 @@ from app.schemas.lastfm import LastFMTrack
 # Finds an existing artist or creates a new one.
 def get_or_create_artist(name: str, db: Session) -> Artist:
     artist = (
-        db.query(Artist)
-        .filter(func.lower(Artist.name) == name.strip().lower())
-        .first()
+        db.query(Artist).filter(func.lower(Artist.name) == name.strip().lower()).first()
     )
 
     if artist:
