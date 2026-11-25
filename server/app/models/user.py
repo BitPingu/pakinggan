@@ -8,6 +8,7 @@ from app.database import Base
 
 if TYPE_CHECKING:
     from app.models.lastfm_connection import LastFMConnection
+    from app.models.listening_history import ListeningHistory
 
 
 # Represents a registered user account.
@@ -29,4 +30,8 @@ class User(Base):
         back_populates="user",
         cascade="all, delete-orphan",
         uselist=False,
+    )
+    listening_history: Mapped[list["ListeningHistory"]] = relationship(
+        back_populates="user",
+        cascade="all, delete-orphan",
     )

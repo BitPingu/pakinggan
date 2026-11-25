@@ -116,3 +116,17 @@ def album(client, artist):
         },
     )
     return response.json()
+
+
+# Creates a test track associated with the test album.
+@pytest.fixture
+def track(client, album):
+    response = client.post(
+        "/api/tracks/",
+        json={
+            "title": "Paranoid Android",
+            "duration": 383,
+            "album_id": album["id"],
+        },
+    )
+    return response.json()

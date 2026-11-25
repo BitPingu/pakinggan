@@ -7,6 +7,7 @@ from app.database import Base
 
 if TYPE_CHECKING:
     from app.models.album import Album
+    from app.models.listening_history import ListeningHistory
 
 
 # Represents a track in an album.
@@ -20,3 +21,8 @@ class Track(Base):
     album_id: Mapped[int] = mapped_column(ForeignKey("albums.id"), nullable=False)
 
     album: Mapped["Album"] = relationship(back_populates="tracks")
+
+    listening_history: Mapped[list["ListeningHistory"]] = relationship(
+        back_populates="track",
+        cascade="all, delete-orphan",
+    )
