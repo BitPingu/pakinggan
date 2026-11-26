@@ -18,7 +18,11 @@ from app.core.security import (
 from app.database import get_db
 from app.models.lastfm_connection import LastFMConnection
 from app.models.user import User
-from app.schemas.lastfm import LastFMRecentTracks, LastFMStatus
+from app.schemas.lastfm import (
+    LastFMNowPlaying,
+    LastFMRecentTracks,
+    LastFMStatus,
+)
 from app.services.lastfm import make_user_lastfm_request
 
 # Defines the Last.fm API routes.
@@ -201,6 +205,87 @@ async def get_recent_tracks(
     ]
 
     return LastFMRecentTracks(tracks=tracks)
+
+
+# Returns the authenticated user's currently playing Last.fm track.
+@router.get("/now-playing", response_model=LastFMNowPlaying)
+async def get_now_playing(
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    # Requests the most recent track from the connected Last.fm account.
+    try:
+        data = await make_user_lastfm_request(
+            user_id=current_user.id,
+            method="user.getRecentTracks",
+            db=db,
+            params={"limit": "1", "extended": "1"},
+        )
+    except (httpx.HTTPError, ValueError) as exc:
+        raise HTTPException(
+            status_code=status.HTTP_502_BAD_GATEWAY,
+            detail="Unable to retrieve currently playing track from Last.fm.",
+        ) from exc
+
+    # Requires the user to connect a Last.fm account.
+    if data is None:
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail="Last.fm account is not connected.",
+        )
+
+    # Extracts the most recent track from the Last.fm response.
+    recent_tracks_data = data.get("recenttracks")
+
+    if not isinstance(recent_tracks_data, dict):
+        raise HTTPException(
+            status_code=status.HTTP_502_BAD_GATEWAY,
+            detail="Invalid response from Last.fm.",
+        )
+
+    recent_tracks = recent_tracks_data.get("track", [])
+
+    if not isinstance(recent_tracks, list) or not all(
+        isinstance(track, dict) for track in recent_tracks
+    ):
+        raise HTTPException(
+            status_code=status.HTTP_502_BAD_GATEWAY,
+            detail="Invalid response from Last.fm.",
+        )
+
+    # Finds the currently playing track.
+    for track in recent_tracks:
+        attributes = track.get("@attr", {})
+
+        if isinstance(attributes, dict) and attributes.get("nowplaying") == "true":
+            artist = track.get("artist")
+            album = track.get("album")
+            images = track.get("image", [])
+
+            if (
+                not isinstance(artist, dict)
+                or (album is not None and not isinstance(album, dict))
+                or not isinstance(images, list)
+                or not all(isinstance(image, dict) for image in images)
+            ):
+                raise HTTPException(
+                    status_code=status.HTTP_502_BAD_GATEWAY,
+                    detail="Invalid response from Last.fm.",
+                )
+
+            return LastFMNowPlaying(
+                track={
+                    "name": track.get("name", ""),
+                    "artist": artist.get("#text", ""),
+                    "album": (album or {}).get("#text"),
+                    "url": track.get("url"),
+                    "image": images[-1].get("#text") if images else None,
+                    "nowplaying": True,
+                }
+            )
+
+    # Returns an empty result when no track is currently playing.
+    return LastFMNowPlaying(track=None)
 
 
 # Disconnects the authenticated user's Last.fm account.

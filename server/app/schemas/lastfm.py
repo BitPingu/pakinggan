@@ -22,3 +22,8 @@ class LastFMTrack(BaseModel):
 # Represents the user's recent Last.fm tracks.
 class LastFMRecentTracks(BaseModel):
     tracks: list[LastFMTrack]
+
+
+# Represents the user's currently playing Last.fm track.
+class LastFMNowPlaying(BaseModel):
+    track: LastFMTrack | None = None
