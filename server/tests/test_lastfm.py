@@ -8,6 +8,7 @@ from app.core.lastfm import (
     authenticated_api_request,
     generate_api_signature,
     get_auth_url,
+    get_now_playing,
     get_recent_tracks,
     get_session,
     make_api_request,
@@ -478,3 +479,97 @@ async def test_get_recent_tracks(monkeypatch):
 
     assert data["recenttracks"]["track"][0]["name"] == "Karma Police"
     assert data["recenttracks"]["@attr"]["page"] == "2"
+
+
+# Tests that the currently playing track is retrieved correctly.
+@pytest.mark.asyncio
+async def test_get_now_playing(monkeypatch):
+    monkeypatch.setattr(settings, "LASTFM_API_KEY", "test_api_key")
+    monkeypatch.setattr(settings, "LASTFM_SHARED_SECRET", "test_secret")
+
+    expected_track = {
+        "name": "Karma Police",
+        "artist": {"name": "Radiohead"},
+        "@attr": {"nowplaying": "true"},
+    }
+
+    async def mock_handler(request):
+        params = dict(request.url.params)
+
+        assert params["method"] == "user.getRecentTracks"
+        assert params["user"] == "radiohead_fan"
+        assert params["limit"] == "1"
+        assert params["extended"] == "1"
+
+        return httpx.Response(
+            200,
+            json={"recenttracks": {"track": [expected_track]}},
+        )
+
+    transport = httpx.MockTransport(mock_handler)
+
+    async with httpx.AsyncClient(transport=transport) as client:
+        track = await get_now_playing(
+            session_key="test_session_key",
+            username="radiohead_fan",
+            client=client,
+        )
+
+    assert track == expected_track
+
+
+# Returns None when no track is currently playing.
+@pytest.mark.asyncio
+async def test_get_now_playing_not_playing(monkeypatch):
+    monkeypatch.setattr(settings, "LASTFM_API_KEY", "test_api_key")
+    monkeypatch.setattr(settings, "LASTFM_SHARED_SECRET", "test_secret")
+
+    async def mock_handler(request):
+        return httpx.Response(
+            200,
+            json={
+                "recenttracks": {
+                    "track": [
+                        {
+                            "name": "Karma Police",
+                            "artist": {"name": "Radiohead"},
+                        }
+                    ]
+                }
+            },
+        )
+
+    transport = httpx.MockTransport(mock_handler)
+
+    async with httpx.AsyncClient(transport=transport) as client:
+        track = await get_now_playing(
+            session_key="test_session_key",
+            username="radiohead_fan",
+            client=client,
+        )
+
+    assert track is None
+
+
+# Returns None when the user has no recent tracks.
+@pytest.mark.asyncio
+async def test_get_now_playing_no_recent_tracks(monkeypatch):
+    monkeypatch.setattr(settings, "LASTFM_API_KEY", "test_api_key")
+    monkeypatch.setattr(settings, "LASTFM_SHARED_SECRET", "test_secret")
+
+    async def mock_handler(request):
+        return httpx.Response(
+            200,
+            json={"recenttracks": {"track": []}},
+        )
+
+    transport = httpx.MockTransport(mock_handler)
+
+    async with httpx.AsyncClient(transport=transport) as client:
+        track = await get_now_playing(
+            session_key="test_session_key",
+            username="radiohead_fan",
+            client=client,
+        )
+
+    assert track is None

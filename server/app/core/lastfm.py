@@ -133,3 +133,32 @@ async def get_recent_tracks(
         },
         client,
     )
+
+
+# Retrieves the currently playing track from Last.fm.
+async def get_now_playing(
+    session_key: str,
+    username: str,
+    client: httpx.AsyncClient | None = None,
+) -> dict | None:
+    data = await get_recent_tracks(
+        session_key,
+        username,
+        limit=1,
+        client=client,
+    )
+
+    recent_tracks = data.get("recenttracks", {}).get("track", [])
+
+    if isinstance(recent_tracks, dict):
+        recent_tracks = [recent_tracks]
+
+    if not recent_tracks:
+        return None
+
+    track = recent_tracks[0]
+
+    if track.get("@attr", {}).get("nowplaying") != "true":
+        return None
+
+    return track

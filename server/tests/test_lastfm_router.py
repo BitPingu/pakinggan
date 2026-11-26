@@ -732,29 +732,22 @@ def test_get_recent_tracks_unauthenticated(client):
 
 # Authenticated users can retrieve their currently playing Last.fm track.
 @patch(
-    "app.routers.lastfm.make_user_lastfm_request",
+    "app.routers.lastfm.get_user_now_playing",
     new_callable=AsyncMock,
 )
-def test_get_now_playing(mock_lastfm_request, client, user):
-    mock_lastfm_request.return_value = {
-        "recenttracks": {
-            "track": [
-                {
-                    "name": "Paranoid Android",
-                    "artist": {"#text": "Radiohead"},
-                    "album": {"#text": "OK Computer"},
-                    "url": "https://www.last.fm/music/Radiohead/_/Paranoid+Android",
-                    "image": [
-                        {"#text": "small-image-url"},
-                        {"#text": "large-image-url"},
-                    ],
-                    "@attr": {"nowplaying": "true"},
-                }
-            ]
-        }
+def test_get_now_playing(mock_get_now_playing, client, user):
+    mock_get_now_playing.return_value = {
+        "name": "Paranoid Android",
+        "artist": {"#text": "Radiohead"},
+        "album": {"#text": "OK Computer"},
+        "url": "https://www.last.fm/music/Radiohead/_/Paranoid+Android",
+        "image": [
+            {"#text": "small-image-url"},
+            {"#text": "large-image-url"},
+        ],
+        "@attr": {"nowplaying": "true"},
     }
 
-    # Logs in to obtain an access token.
     login_response = client.post(
         "/api/users/login",
         json={
@@ -783,21 +776,33 @@ def test_get_now_playing(mock_lastfm_request, client, user):
         }
     }
 
-    mock_lastfm_request.assert_awaited_once_with(
+    mock_get_now_playing.assert_awaited_once_with(
         user_id=user["id"],
-        method="user.getRecentTracks",
-        db=mock_lastfm_request.call_args.kwargs["db"],
-        params={"limit": "1", "extended": "1"},
+        db=mock_get_now_playing.call_args.kwargs["db"],
     )
 
 
 # Users with no currently playing track receive an empty result.
 @patch(
-    "app.routers.lastfm.make_user_lastfm_request",
+    "app.routers.lastfm.get_user_now_playing",
     new_callable=AsyncMock,
-    return_value={"recenttracks": {"track": []}},
+    return_value=None,
 )
-def test_get_now_playing_empty(mock_lastfm_request, client, user):
+def test_get_now_playing_empty(
+    mock_get_now_playing,
+    client,
+    user,
+    db_session,
+):
+    connection = LastFMConnection(
+        user_id=user["id"],
+        lastfm_username="radiohead_fan",
+        session_key="encrypted-session-key",
+    )
+
+    db_session.add(connection)
+    db_session.commit()
+
     login_response = client.post(
         "/api/users/login",
         json={
@@ -816,16 +821,16 @@ def test_get_now_playing_empty(mock_lastfm_request, client, user):
     assert response.status_code == 200
     assert response.json() == {"track": None}
 
-    mock_lastfm_request.assert_awaited_once()
+    mock_get_now_playing.assert_awaited_once()
 
 
 # Users without a Last.fm connection cannot retrieve Now Playing.
 @patch(
-    "app.routers.lastfm.make_user_lastfm_request",
+    "app.routers.lastfm.get_user_now_playing",
     new_callable=AsyncMock,
     return_value=None,
 )
-def test_get_now_playing_not_connected(mock_lastfm_request, client, user):
+def test_get_now_playing_not_connected(mock_get_now_playing, client, user):
     login_response = client.post(
         "/api/users/login",
         json={
@@ -844,16 +849,16 @@ def test_get_now_playing_not_connected(mock_lastfm_request, client, user):
     assert response.status_code == 409
     assert response.json()["detail"] == "Last.fm account is not connected."
 
-    mock_lastfm_request.assert_awaited_once()
+    mock_get_now_playing.assert_awaited_once()
 
 
 # Last.fm API errors return a bad gateway response.
 @patch(
-    "app.routers.lastfm.make_user_lastfm_request",
+    "app.routers.lastfm.get_user_now_playing",
     new_callable=AsyncMock,
     side_effect=ValueError("Last.fm API request failed."),
 )
-def test_get_now_playing_api_error(mock_lastfm_request, client, user):
+def test_get_now_playing_api_error(mock_get_now_playing, client, user):
     login_response = client.post(
         "/api/users/login",
         json={
@@ -874,52 +879,31 @@ def test_get_now_playing_api_error(mock_lastfm_request, client, user):
         "Unable to retrieve currently playing track from Last.fm."
     )
 
-    mock_lastfm_request.assert_awaited_once()
+    mock_get_now_playing.assert_awaited_once()
 
 
-# Invalid Last.fm response structures return a bad gateway response.
+# Invalid Last.fm track structures return a bad gateway response.
 @pytest.mark.parametrize(
-    "api_response",
+    "track",
     [
-        {},
-        {"recenttracks": []},
-        {"recenttracks": {"track": {}}},
-        {"recenttracks": {"track": ["invalid-track"]}},
-        {"recenttracks": {"track": [{"@attr": {"nowplaying": "true"}}]}},
-        {
-            "recenttracks": {
-                "track": [
-                    {
-                        "artist": {},
-                        "image": "invalid-image",
-                        "@attr": {"nowplaying": "true"},
-                    }
-                ]
-            }
-        },
-        {
-            "recenttracks": {
-                "track": [
-                    {
-                        "artist": {},
-                        "@attr": "invalid-attributes",
-                    }
-                ]
-            }
-        },
+        {"artist": "Radiohead"},
+        {"artist": None},
+        {"artist": {}, "album": "OK Computer"},
+        {"artist": {}, "image": "invalid-image"},
+        {"artist": {}, "image": ["invalid-image"]},
     ],
 )
 @patch(
-    "app.routers.lastfm.make_user_lastfm_request",
+    "app.routers.lastfm.get_user_now_playing",
     new_callable=AsyncMock,
 )
 def test_get_now_playing_invalid_response(
-    mock_lastfm_request,
+    mock_get_now_playing,
     client,
     user,
-    api_response,
+    track,
 ):
-    mock_lastfm_request.return_value = api_response
+    mock_get_now_playing.return_value = track
 
     login_response = client.post(
         "/api/users/login",
@@ -939,7 +923,7 @@ def test_get_now_playing_invalid_response(
     assert response.status_code == 502
     assert response.json()["detail"] == "Invalid response from Last.fm."
 
-    mock_lastfm_request.assert_awaited_once()
+    mock_get_now_playing.assert_awaited_once()
 
 
 # Unauthenticated users cannot retrieve Now Playing.

@@ -1,7 +1,7 @@
 from sqlalchemy.orm import Session
 
 from app.core.encryption import decrypt_session_key
-from app.core.lastfm import authenticated_api_request
+from app.core.lastfm import authenticated_api_request, get_now_playing
 from app.models.lastfm_connection import LastFMConnection
 
 
@@ -40,4 +40,22 @@ async def make_user_lastfm_request(
         session_key=session_key,
         method=method,
         params=params,
+    )
+
+
+# Retrieves the user's currently playing track from Last.fm.
+async def get_user_now_playing(
+    user_id: int,
+    db: Session,
+) -> dict | None:
+    connection_data = get_user_lastfm_connection(user_id, db)
+
+    if not connection_data:
+        return None
+
+    connection, session_key = connection_data
+
+    return await get_now_playing(
+        session_key=session_key,
+        username=connection.lastfm_username,
     )
