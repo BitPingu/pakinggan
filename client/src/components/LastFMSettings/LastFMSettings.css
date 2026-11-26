@@ -1,0 +1,97 @@
+/* Last.fm buttons */
+
+.lastfm-button {
+  padding: 10px 16px;
+  border: none;
+  border-radius: 8px;
+  background: #a78bfa;
+  color: #101014;
+  font: inherit;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition:
+    background 0.2s,
+    border-color 0.2s,
+    color 0.2s;
+}
+
+.lastfm-button:hover:not(:disabled) {
+  background: #c4b5fd;
+}
+
+.lastfm-button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* Last.fm connection layout */
+
+.lastfm-connection {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 12px;
+}
+
+/* Last.fm connection status */
+
+.lastfm-status {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 4px 0 0;
+  font-size: 14px;
+}
+
+.lastfm-status-indicator {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+}
+
+.lastfm-status-connected .lastfm-status-indicator {
+  background: #4ade80;
+}
+
+/* Last.fm disconnect button */
+
+.lastfm-disconnect-button {
+  border: 1px solid #393942;
+  background: transparent;
+  color: #b5b5c0;
+}
+
+.lastfm-disconnect-button:hover:not(:disabled) {
+  border-color: #ef7777;
+  background: rgb(239 119 119 / 10%);
+  color: #ef7777;
+}
+
+/* Last.fm description */
+
+.settings-section > .lastfm-description {
+  margin: 0 0 12px;
+}
+
+/* Last.fm warning message */
+
+.settings-section > .lastfm-warning {
+  margin: 12px 0 0;
+  color: #facc15;
+  font-size: 14px;
+}
+
+/* Last.fm feedback messages */
+
+.settings-section > .form-success {
+  margin: 12px 0 0;
+  color: #4ade80;
+  font-size: 14px;
+}
+
+.settings-section > .form-error {
+  margin: 12px 0 0;
+  color: #f87171;
+  font-size: 14px;
+}

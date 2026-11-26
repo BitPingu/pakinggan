@@ -1,3 +1,4 @@
+import json
 import secrets
 
 import httpx
@@ -56,7 +57,7 @@ def validate_lastfm_state(state: str, request: Request) -> int:
 # Redirects the user and clears the Last.fm state cookie.
 def redirect_lastfm(status_value: str) -> RedirectResponse:
     response = RedirectResponse(
-        url=f"{settings.FRONTEND_URL}/?lastfm={status_value}",
+        url=f"{settings.FRONTEND_URL}/settings?lastfm={status_value}",
         status_code=status.HTTP_303_SEE_OTHER,
     )
 
@@ -68,7 +69,7 @@ def redirect_lastfm(status_value: str) -> RedirectResponse:
     return response
 
 
-# Redirects the authenticated user to Last.fm authorization.
+# Returns the Last.fm authorization URL for the authenticated user.
 @router.get("/connect")
 def connect_lastfm(current_user: User = Depends(get_current_user)):
     state = create_lastfm_state(current_user.id)
@@ -77,9 +78,12 @@ def connect_lastfm(current_user: User = Depends(get_current_user)):
 
     auth_url = get_auth_url(callback_url)
 
-    response = RedirectResponse(url=auth_url)
+    # Returns the authorization URL and stores the state in a secure cookie.
+    response = Response(
+        content=json.dumps({"auth_url": auth_url}),
+        media_type="application/json",
+    )
 
-    # Stores the state token in a short-lived, HttpOnly cookie.
     response.set_cookie(
         key="lastfm_state",
         value=state,
@@ -257,7 +261,13 @@ async def get_now_playing(
     for track in recent_tracks:
         attributes = track.get("@attr", {})
 
-        if isinstance(attributes, dict) and attributes.get("nowplaying") == "true":
+        if not isinstance(attributes, dict):
+            raise HTTPException(
+                status_code=status.HTTP_502_BAD_GATEWAY,
+                detail="Invalid response from Last.fm.",
+            )
+
+        if attributes.get("nowplaying") == "true":
             artist = track.get("artist")
             album = track.get("album")
             images = track.get("image", [])

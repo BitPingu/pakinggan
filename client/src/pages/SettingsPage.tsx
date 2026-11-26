@@ -1,13 +1,47 @@
-import { useState, type FormEvent } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useEffect, useState, type FormEvent } from 'react'
+import { useNavigate, useSearchParams } from 'react-router-dom'
 import PageHeader from '../components/PageHeader/PageHeader'
 import { useAuth } from '../hooks/useAuth'
+import LastFMSettings from '../components/LastFMSettings/LastFMSettings'
 
 // Displays account information and account management options.
 function SettingsPage() {
   const { user, changeUsername, changeEmail, changePassword, deleteAccount } =
     useAuth()
   const navigate = useNavigate()
+
+  // Reads the Last.fm connection result from the URL.
+  const [searchParams, setSearchParams] = useSearchParams()
+  const lastfmStatus = searchParams.get('lastfm')
+  const lastfmMessage = lastfmStatus
+    ? ({
+        connected: {
+          text: 'Your Last.fm account was connected successfully.',
+          type: 'success' as const,
+        },
+        cancelled: {
+          text: 'Last.fm authorization was cancelled.',
+          type: 'warning' as const,
+        },
+        error: {
+          text: 'Unable to connect your Last.fm account. Please try again.',
+          type: 'error' as const,
+        },
+      }[lastfmStatus] ?? null)
+    : null
+
+  // Clears the Last.fm connection result from the URL.
+  useEffect(() => {
+    if (!lastfmStatus) return
+
+    setSearchParams(
+      (params) => {
+        params.delete('lastfm')
+        return params
+      },
+      { replace: true },
+    )
+  }, [lastfmStatus, setSearchParams])
 
   // Tracks the current password, submission status, and deletion errors.
   const [password, setPassword] = useState('')
@@ -162,6 +196,9 @@ function SettingsPage() {
           </div>
         </div>
       </section>
+
+      {/* Last.fm integration */}
+      <LastFMSettings successMessage={lastfmMessage} />
 
       <div className="settings-grid">
         {/* Email change */}

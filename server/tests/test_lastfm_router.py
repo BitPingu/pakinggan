@@ -32,8 +32,8 @@ def test_connect_lastfm(client, user):
             follow_redirects=False,
         )
 
-    assert response.status_code == 307
-    assert response.headers["location"] == ("https://www.last.fm/api/auth/?mocked")
+    assert response.status_code == 200
+    assert response.json() == {"auth_url": "https://www.last.fm/api/auth/?mocked"}
 
     # Verifies that the callback URL contains the authorization state.
     callback_url = mock_auth_url.call_args.args[0]
@@ -130,7 +130,7 @@ def test_callback_lastfm_authorization_cancelled(client, user):
     )
 
     assert response.status_code == 303
-    assert response.headers["location"].endswith("/?lastfm=cancelled")
+    assert response.headers["location"].endswith("/settings?lastfm=cancelled")
     assert "lastfm_state" in response.headers["set-cookie"]
 
 
@@ -151,7 +151,7 @@ def test_callback_lastfm_missing_token(client, user):
     )
 
     assert response.status_code == 303
-    assert response.headers["location"].endswith("/?lastfm=cancelled")
+    assert response.headers["location"].endswith("/settings?lastfm=cancelled")
 
 
 # Last.fm API failures redirect the user to the frontend with an error.
@@ -176,7 +176,7 @@ def test_callback_lastfm_api_error(mock_get_session, client, user):
     )
 
     assert response.status_code == 303
-    assert response.headers["location"].endswith("/?lastfm=error")
+    assert response.headers["location"].endswith("/settings?lastfm=error")
 
     mock_get_session.assert_awaited_once_with("mock-token")
 
@@ -213,7 +213,7 @@ def test_callback_lastfm_create_connection(
     )
 
     assert response.status_code == 303
-    assert response.headers["location"].endswith("/?lastfm=connected")
+    assert response.headers["location"].endswith("/settings?lastfm=connected")
 
     # Verifies that the Last.fm connection was saved.
     connection = (
@@ -272,7 +272,7 @@ def test_callback_lastfm_update_connection(
     )
 
     assert response.status_code == 303
-    assert response.headers["location"].endswith("/?lastfm=connected")
+    assert response.headers["location"].endswith("/settings?lastfm=connected")
 
     # Verifies that the existing connection was updated.
     db_session.refresh(connection)
@@ -321,7 +321,7 @@ def test_callback_lastfm_database_error(
         )
 
     assert response.status_code == 303
-    assert response.headers["location"].endswith("/?lastfm=error")
+    assert response.headers["location"].endswith("/settings?lastfm=error")
 
     mock_get_session.assert_awaited_once_with("mock-token")
     mock_encrypt.assert_called_once_with("mock-session-key")
@@ -349,7 +349,7 @@ def test_callback_lastfm_connection_error(mock_get_session, client, user):
     )
 
     assert response.status_code == 303
-    assert response.headers["location"].endswith("/?lastfm=error")
+    assert response.headers["location"].endswith("/settings?lastfm=error")
 
     mock_get_session.assert_awaited_once_with("mock-token")
 
@@ -893,6 +893,16 @@ def test_get_now_playing_api_error(mock_lastfm_request, client, user):
                         "artist": {},
                         "image": "invalid-image",
                         "@attr": {"nowplaying": "true"},
+                    }
+                ]
+            }
+        },
+        {
+            "recenttracks": {
+                "track": [
+                    {
+                        "artist": {},
+                        "@attr": "invalid-attributes",
                     }
                 ]
             }
