@@ -12,6 +12,7 @@ import RegisterPage from './pages/RegisterPage'
 import ForgotPasswordPage from './pages/ForgotPasswordPage'
 import ResetPasswordPage from './pages/ResetPasswordPage'
 import SettingsPage from './pages/SettingsPage'
+import ListeningHistoryPage from './pages/ListeningHistoryPage'
 import './App.css'
 
 // Protects application pages from unauthenticated access.
@@ -66,6 +67,7 @@ function App() {
         <Route path="/albums" element={<AlbumsPage />} />
         <Route path="/tracks" element={<TracksPage />} />
         <Route path="/settings" element={<SettingsPage />} />
+        <Route path="/history" element={<ListeningHistoryPage />} />
       </Route>
 
       {/* Redirect unknown URLs */}

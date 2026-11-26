@@ -341,3 +341,236 @@ async def test_sync_listening_history_handles_empty_track_list(db_session, user)
 
     assert result == 0
     assert len(history) == 0
+
+
+# Skips plays that have already been imported.
+async def test_sync_listening_history_skips_duplicate_plays(db_session, user, track):
+    played_at = datetime(2026, 11, 25, 16, 0, tzinfo=timezone.utc)
+
+    # Creates an existing listening-history entry.
+    existing_history = ListeningHistory(
+        user_id=user["id"],
+        track_id=track["id"],
+        played_at=played_at,
+    )
+
+    db_session.add(existing_history)
+    db_session.commit()
+
+    lastfm_response = {
+        "recenttracks": {
+            "track": [
+                {
+                    "name": "Test Track",
+                    "artist": {"#text": "Test Artist"},
+                    "album": {"#text": "Test Album"},
+                    "date": {"uts": "1795622400"},
+                }
+            ]
+        }
+    }
+
+    with (
+        patch(
+            "app.services.listening_history.make_user_lastfm_request",
+            new_callable=AsyncMock,
+            return_value=lastfm_response,
+        ),
+        patch(
+            "app.services.listening_history.resolve_track_metadata",
+            return_value=(
+                None,
+                None,
+                db_session.get(Track, track["id"]),
+            ),
+        ),
+    ):
+        result = await sync_listening_history(db_session, user["id"])
+
+    history = (
+        db_session.query(ListeningHistory)
+        .filter(ListeningHistory.user_id == user["id"])
+        .all()
+    )
+
+    assert result == 0
+    assert len(history) == 1
+
+
+# Returns zero when Last.fm returns invalid recent-tracks data.
+@pytest.mark.parametrize("recent_tracks_data", [None, [], "invalid"])
+async def test_sync_listening_history_handles_invalid_recent_tracks(
+    db_session, user, recent_tracks_data
+):
+    lastfm_response = {"recenttracks": recent_tracks_data}
+
+    with (
+        patch(
+            "app.services.listening_history.make_user_lastfm_request",
+            new_callable=AsyncMock,
+            return_value=lastfm_response,
+        ),
+        patch("app.services.listening_history.resolve_track_metadata") as mock_resolve,
+    ):
+        result = await sync_listening_history(db_session, user["id"])
+
+    mock_resolve.assert_not_called()
+    assert result == 0
+
+
+# Skips malformed entries while importing valid tracks.
+async def test_sync_listening_history_skips_malformed_track_entries(
+    db_session, user, track
+):
+    lastfm_response = {
+        "recenttracks": {
+            "track": [
+                None,
+                "invalid",
+                {
+                    "name": "Test Track",
+                    "artist": {"#text": "Test Artist"},
+                    "date": {"uts": "1795622400"},
+                },
+            ]
+        }
+    }
+
+    with (
+        patch(
+            "app.services.listening_history.make_user_lastfm_request",
+            new_callable=AsyncMock,
+            return_value=lastfm_response,
+        ),
+        patch(
+            "app.services.listening_history.resolve_track_metadata",
+            return_value=(
+                None,
+                None,
+                db_session.get(Track, track["id"]),
+            ),
+        ) as mock_resolve,
+    ):
+        result = await sync_listening_history(db_session, user["id"])
+
+    history = (
+        db_session.query(ListeningHistory)
+        .filter(ListeningHistory.user_id == user["id"])
+        .all()
+    )
+
+    assert result == 1
+    assert len(history) == 1
+    mock_resolve.assert_called_once()
+
+
+# Skips tracks with non-numeric listening timestamps.
+@pytest.mark.parametrize("timestamp", ["invalid", "12.5", "abc123"])
+async def test_sync_listening_history_skips_invalid_timestamps(
+    db_session, user, timestamp
+):
+    lastfm_response = {
+        "recenttracks": {
+            "track": [
+                {
+                    "name": "Test Track",
+                    "artist": {"#text": "Test Artist"},
+                    "date": {"uts": timestamp},
+                }
+            ]
+        }
+    }
+
+    with (
+        patch(
+            "app.services.listening_history.make_user_lastfm_request",
+            new_callable=AsyncMock,
+            return_value=lastfm_response,
+        ),
+        patch("app.services.listening_history.resolve_track_metadata") as mock_resolve,
+    ):
+        result = await sync_listening_history(db_session, user["id"])
+
+    mock_resolve.assert_not_called()
+    assert result == 0
+
+
+# Skips tracks with missing or invalid track and artist names.
+@pytest.mark.parametrize(
+    ("track_name", "artist"),
+    [
+        (None, {"#text": "Test Artist"}),
+        ("", {"#text": "Test Artist"}),
+        ("   ", {"#text": "Test Artist"}),
+        ("Test Track", None),
+        ("Test Track", "Test Artist"),
+        ("Test Track", {"#text": ""}),
+        ("Test Track", {"#text": "   "}),
+    ],
+)
+async def test_sync_listening_history_skips_invalid_track_metadata(
+    db_session, user, track_name, artist
+):
+    lastfm_response = {
+        "recenttracks": {
+            "track": [
+                {
+                    "name": track_name,
+                    "artist": artist,
+                    "date": {"uts": "1795622400"},
+                }
+            ]
+        }
+    }
+
+    with (
+        patch(
+            "app.services.listening_history.make_user_lastfm_request",
+            new_callable=AsyncMock,
+            return_value=lastfm_response,
+        ),
+        patch("app.services.listening_history.resolve_track_metadata") as mock_resolve,
+    ):
+        result = await sync_listening_history(db_session, user["id"])
+
+    mock_resolve.assert_not_called()
+    assert result == 0
+
+
+# Skips tracks with malformed date and artist structures.
+@pytest.mark.parametrize(
+    ("artist", "date"),
+    [
+        ("invalid", {"uts": "1795622400"}),
+        ({"#text": "Test Artist"}, None),
+        ({"#text": "Test Artist"}, "invalid"),
+        ({"#text": "Test Artist"}, []),
+    ],
+)
+async def test_sync_listening_history_skips_malformed_nested_data(
+    db_session, user, artist, date
+):
+    lastfm_response = {
+        "recenttracks": {
+            "track": [
+                {
+                    "name": "Test Track",
+                    "artist": artist,
+                    "date": date,
+                }
+            ]
+        }
+    }
+
+    with (
+        patch(
+            "app.services.listening_history.make_user_lastfm_request",
+            new_callable=AsyncMock,
+            return_value=lastfm_response,
+        ),
+        patch("app.services.listening_history.resolve_track_metadata") as mock_resolve,
+    ):
+        result = await sync_listening_history(db_session, user["id"])
+
+    mock_resolve.assert_not_called()
+    assert result == 0

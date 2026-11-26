@@ -1,7 +1,7 @@
 from datetime import datetime
 from typing import TYPE_CHECKING
 
-from sqlalchemy import DateTime, ForeignKey, func
+from sqlalchemy import DateTime, ForeignKey, UniqueConstraint, func
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.database import Base
@@ -14,6 +14,14 @@ if TYPE_CHECKING:
 # Represents an individual track play in a user's listening history.
 class ListeningHistory(Base):
     __tablename__ = "listening_history"
+    __table_args__ = (
+        UniqueConstraint(
+            "user_id",
+            "track_id",
+            "played_at",
+            name="uq_listening_history_user_track_played_at",
+        ),
+    )
 
     id: Mapped[int] = mapped_column(primary_key=True, index=True)
 

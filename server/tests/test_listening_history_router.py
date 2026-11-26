@@ -1,4 +1,8 @@
 from datetime import datetime, timezone
+from unittest.mock import AsyncMock, patch
+
+import httpx
+from sqlalchemy.exc import SQLAlchemyError
 
 from app.models.listening_history import ListeningHistory
 from app.models.track import Track
@@ -201,6 +205,99 @@ def test_get_listening_history_invalid_pagination(client, auth_headers):
 # Rejects requests without an authentication token.
 def test_get_listening_history_unauthenticated(client):
     response = client.get("/api/listening-history/")
+
+    assert response.status_code == 401
+    assert response.json()["detail"] == "Not authenticated"
+
+
+# Successfully syncs listening history from Last.fm.
+def test_sync_listening_history(client, user, auth_headers):
+    with (
+        patch(
+            "app.routers.listening_history.get_user_lastfm_connection",
+            return_value=(object(), "session_key"),
+        ),
+        patch(
+            "app.routers.listening_history.sync_listening_history",
+            new_callable=AsyncMock,
+            return_value=3,
+        ) as mock_sync,
+    ):
+        response = client.post(
+            "/api/listening-history/sync",
+            headers=auth_headers,
+        )
+
+    assert response.status_code == 200
+    assert response.json() == {"imported": 3}
+
+    assert mock_sync.await_args.args[1] == user["id"]
+
+
+# Rejects sync requests when the user has not connected Last.fm.
+def test_sync_listening_history_without_lastfm_connection(client, auth_headers):
+    with patch(
+        "app.routers.listening_history.get_user_lastfm_connection",
+        return_value=None,
+    ):
+        response = client.post(
+            "/api/listening-history/sync",
+            headers=auth_headers,
+        )
+
+    assert response.status_code == 400
+    assert response.json()["detail"] == "Last.fm account is not connected."
+
+
+# Returns an error when the Last.fm API request fails.
+def test_sync_listening_history_lastfm_error(client, auth_headers):
+    with (
+        patch(
+            "app.routers.listening_history.get_user_lastfm_connection",
+            return_value=(object(), "session_key"),
+        ),
+        patch(
+            "app.routers.listening_history.sync_listening_history",
+            new_callable=AsyncMock,
+            side_effect=httpx.HTTPError("Last.fm request failed"),
+        ),
+    ):
+        response = client.post(
+            "/api/listening-history/sync",
+            headers=auth_headers,
+        )
+
+    assert response.status_code == 502
+    assert response.json()["detail"] == (
+        "Failed to sync listening history from Last.fm."
+    )
+
+
+# Returns an error when saving listening history fails.
+def test_sync_listening_history_database_error(client, auth_headers):
+    with (
+        patch(
+            "app.routers.listening_history.get_user_lastfm_connection",
+            return_value=(object(), "session_key"),
+        ),
+        patch(
+            "app.routers.listening_history.sync_listening_history",
+            new_callable=AsyncMock,
+            side_effect=SQLAlchemyError("Database error"),
+        ),
+    ):
+        response = client.post(
+            "/api/listening-history/sync",
+            headers=auth_headers,
+        )
+
+    assert response.status_code == 500
+    assert response.json()["detail"] == "Failed to save listening history."
+
+
+# Rejects sync requests without an authentication token.
+def test_sync_listening_history_unauthenticated(client):
+    response = client.post("/api/listening-history/sync")
 
     assert response.status_code == 401
     assert response.json()["detail"] == "Not authenticated"

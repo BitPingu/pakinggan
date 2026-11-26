@@ -31,34 +31,70 @@ async def sync_listening_history(
         return 0
 
     # Extracts the recently played tracks from the API response.
-    recent_tracks = response.get("recenttracks", {}).get("track", [])
+    recent_tracks_data = response.get("recenttracks")
+
+    if not isinstance(recent_tracks_data, dict):
+        return 0
+
+    recent_tracks = recent_tracks_data.get("track", [])
 
     # Normalizes a single track response into a list.
     if isinstance(recent_tracks, dict):
         recent_tracks = [recent_tracks]
 
+    # Returns zero if the track collection is invalid.
+    if not isinstance(recent_tracks, list):
+        return 0
+
     imported_count = 0
 
     for raw_track in recent_tracks:
+        # Skips entries that are not valid track objects.
+        if not isinstance(raw_track, dict):
+            continue
+
         # Skips tracks that are currently playing.
         attributes = raw_track.get("@attr", {}) or {}
 
-        if attributes.get("nowplaying") == "true":
+        if isinstance(attributes, dict) and attributes.get("nowplaying") == "true":
+            continue
+
+        # Extracts the track and artist names.
+        track_name = raw_track.get("name")
+        artist = raw_track.get("artist")
+        artist_name = artist.get("#text") if isinstance(artist, dict) else None
+
+        # Skips tracks with missing or empty names.
+        if not isinstance(track_name, str) or not track_name.strip():
+            continue
+
+        if not isinstance(artist_name, str) or not artist_name.strip():
             continue
 
         # Extracts the Unix timestamp from the track's date information.
-        date = raw_track.get("date", {}) or {}
+        date = raw_track.get("date")
+
+        if not isinstance(date, dict):
+            continue
+
         timestamp = date.get("uts")
 
-        # Skips tracks without a listening timestamp.
-        if not timestamp:
+        # Skips tracks with missing or invalid listening timestamps.
+        if not isinstance(timestamp, str) or not timestamp.isdigit():
             continue
+
+        # Extracts the album name when available.
+        album = raw_track.get("album")
+        album_name = album.get("#text") if isinstance(album, dict) else None
+
+        if not isinstance(album_name, str) or not album_name.strip():
+            album_name = None
 
         # Converts the raw Last.fm response into a validated track schema.
         metadata = LastFMTrack(
-            name=raw_track["name"],
-            artist=raw_track["artist"]["#text"],
-            album=raw_track.get("album", {}).get("#text") or None,
+            name=track_name,
+            artist=artist_name,
+            album=album_name or None,
             url=raw_track.get("url"),
             played_at=date.get("#text"),
             uts=timestamp,
@@ -67,11 +103,28 @@ async def sync_listening_history(
         # Resolves the track metadata to existing or newly created records.
         _, _, track = resolve_track_metadata(metadata, db)
 
+        # Converts the Last.fm timestamp into a timezone-aware datetime.
+        played_at = parse_lastfm_timestamp(metadata.uts)
+
+        # Skips plays that have already been imported.
+        existing_history = (
+            db.query(ListeningHistory)
+            .filter(
+                ListeningHistory.user_id == user_id,
+                ListeningHistory.track_id == track.id,
+                ListeningHistory.played_at == played_at,
+            )
+            .first()
+        )
+
+        if existing_history:
+            continue
+
         # Creates a listening-history entry for the played track.
         history = ListeningHistory(
             user_id=user_id,
             track_id=track.id,
-            played_at=parse_lastfm_timestamp(metadata.uts),
+            played_at=played_at,
         )
 
         db.add(history)
