@@ -313,7 +313,30 @@ async def test_sync_listening_history_uses_correct_request_parameters(db_session
         user_id=user["id"],
         method="user.getRecentTracks",
         db=db_session,
-        params={"limit": "20"},
+        params={
+            "limit": "20",
+            "page": "1",
+        },
+    )
+
+
+# Requests the specified page of recently played tracks from Last.fm.
+async def test_sync_listening_history_uses_specified_page(db_session, user):
+    with patch(
+        "app.services.listening_history.make_user_lastfm_request",
+        new_callable=AsyncMock,
+        return_value=None,
+    ) as mock_request:
+        await sync_listening_history(db_session, user["id"], page=2)
+
+    mock_request.assert_awaited_once_with(
+        user_id=user["id"],
+        method="user.getRecentTracks",
+        db=db_session,
+        params={
+            "limit": "20",
+            "page": "2",
+        },
     )
 
 

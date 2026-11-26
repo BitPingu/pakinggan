@@ -17,13 +17,17 @@ def parse_lastfm_timestamp(timestamp: str) -> datetime:
 async def sync_listening_history(
     db: Session,
     user_id: int,
+    page: int = 1,
 ) -> int:
     # Fetches the user's 20 most recently played tracks.
     response = await make_user_lastfm_request(
         user_id=user_id,
         method="user.getRecentTracks",
         db=db,
-        params={"limit": "20"},
+        params={
+            "limit": "20",
+            "page": str(page),
+        },
     )
 
     # Returns zero if the Last.fm request fails or no connection exists.

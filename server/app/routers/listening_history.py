@@ -49,6 +49,7 @@ def get_listening_history(
 # Imports recent listening history from the user's Last.fm account.
 @router.post("/sync")
 async def sync_user_listening_history(
+    page: int = Query(default=1, ge=1),
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
@@ -61,7 +62,11 @@ async def sync_user_listening_history(
             )
 
         # Imports recent plays from Last.fm.
-        imported_count = await sync_listening_history(db, current_user.id)
+        imported_count = await sync_listening_history(
+            db,
+            current_user.id,
+            page=page,
+        )
 
         # Commits the imported listening-history entries.
         db.commit()

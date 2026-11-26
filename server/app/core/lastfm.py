@@ -112,3 +112,24 @@ async def get_session(
         raise ValueError("Invalid Last.fm username.")
 
     return lastfm_username, session_key
+
+
+# Retrieves a page of recently played tracks from Last.fm.
+async def get_recent_tracks(
+    session_key: str,
+    username: str,
+    page: int = 1,
+    limit: int = 20,
+    client: httpx.AsyncClient | None = None,
+) -> dict:
+    return await authenticated_api_request(
+        session_key,
+        "user.getRecentTracks",
+        {
+            "user": username,
+            "page": str(page),
+            "limit": str(limit),
+            "extended": "1",
+        },
+        client,
+    )

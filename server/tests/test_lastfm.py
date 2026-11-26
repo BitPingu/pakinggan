@@ -8,6 +8,7 @@ from app.core.lastfm import (
     authenticated_api_request,
     generate_api_signature,
     get_auth_url,
+    get_recent_tracks,
     get_session,
     make_api_request,
 )
@@ -430,3 +431,50 @@ async def test_authenticated_api_request_invalid_response(monkeypatch):
                 method="user.getRecentTracks",
                 client=client,
             )
+
+
+# Tests that a page of recently played tracks is retrieved correctly.
+@pytest.mark.asyncio
+async def test_get_recent_tracks(monkeypatch):
+    monkeypatch.setattr(settings, "LASTFM_API_KEY", "test_api_key")
+    monkeypatch.setattr(settings, "LASTFM_SHARED_SECRET", "test_secret")
+
+    async def mock_handler(request):
+        params = dict(request.url.params)
+
+        assert params["method"] == "user.getRecentTracks"
+        assert params["api_key"] == "test_api_key"
+        assert params["sk"] == "test_session_key"
+        assert params["user"] == "radiohead_fan"
+        assert params["page"] == "2"
+        assert params["limit"] == "20"
+        assert params["extended"] == "1"
+        assert params["format"] == "json"
+        assert "api_sig" in params
+
+        return httpx.Response(
+            200,
+            json={
+                "recenttracks": {
+                    "track": [{"name": "Karma Police"}],
+                    "@attr": {
+                        "page": "2",
+                        "perPage": "20",
+                    },
+                }
+            },
+        )
+
+    transport = httpx.MockTransport(mock_handler)
+
+    async with httpx.AsyncClient(transport=transport) as client:
+        data = await get_recent_tracks(
+            session_key="test_session_key",
+            username="radiohead_fan",
+            page=2,
+            limit=20,
+            client=client,
+        )
+
+    assert data["recenttracks"]["track"][0]["name"] == "Karma Police"
+    assert data["recenttracks"]["@attr"]["page"] == "2"

@@ -1,5 +1,5 @@
 from datetime import datetime, timezone
-from unittest.mock import AsyncMock, patch
+from unittest.mock import ANY, AsyncMock, patch
 
 import httpx
 from sqlalchemy.exc import SQLAlchemyError
@@ -231,7 +231,49 @@ def test_sync_listening_history(client, user, auth_headers):
     assert response.status_code == 200
     assert response.json() == {"imported": 3}
 
-    assert mock_sync.await_args.args[1] == user["id"]
+    mock_sync.assert_awaited_once_with(
+        ANY,
+        user["id"],
+        page=1,
+    )
+
+
+# Syncs a specified page of listening history from Last.fm.
+def test_sync_listening_history_specified_page(client, user, auth_headers):
+    with (
+        patch(
+            "app.routers.listening_history.get_user_lastfm_connection",
+            return_value=(object(), "session_key"),
+        ),
+        patch(
+            "app.routers.listening_history.sync_listening_history",
+            new_callable=AsyncMock,
+            return_value=5,
+        ) as mock_sync,
+    ):
+        response = client.post(
+            "/api/listening-history/sync?page=2",
+            headers=auth_headers,
+        )
+
+    assert response.status_code == 200
+    assert response.json() == {"imported": 5}
+
+    mock_sync.assert_awaited_once_with(
+        ANY,
+        user["id"],
+        page=2,
+    )
+
+
+# Rejects invalid Last.fm pagination parameters.
+def test_sync_listening_history_invalid_page(client, auth_headers):
+    response = client.post(
+        "/api/listening-history/sync?page=0",
+        headers=auth_headers,
+    )
+
+    assert response.status_code == 422
 
 
 # Rejects sync requests when the user has not connected Last.fm.

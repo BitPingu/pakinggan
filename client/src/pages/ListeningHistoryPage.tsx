@@ -52,6 +52,9 @@ function ListeningHistoryPage() {
   // Tracks whether more listening history entries are available.
   const [hasMore, setHasMore] = useState(true)
 
+  // Tracks the next Last.fm page to import.
+  const [nextLastFMPage, setNextLastFMPage] = useState(2)
+
   // Tracks whether the user has connected their Last.fm account.
   const [isLastFMConnected, setIsLastFMConnected] = useState(false)
 
@@ -91,6 +94,13 @@ function ListeningHistoryPage() {
     setLoadMoreError(null)
 
     try {
+      // Imports the next page of listening history from Last.fm.
+      if (isLastFMConnected) {
+        await syncListeningHistory(nextLastFMPage)
+        setNextLastFMPage((currentPage) => currentPage + 1)
+      }
+
+      // Fetches the newly imported listening history entries.
       const entries = await getListeningHistory(PAGE_SIZE, history.length)
 
       setHistory((currentHistory) => [...currentHistory, ...entries])
@@ -111,6 +121,7 @@ function ListeningHistoryPage() {
 
     try {
       const result = await syncListeningHistory()
+      setNextLastFMPage(2)
 
       setSyncMessage(
         result.imported === 0
@@ -166,7 +177,7 @@ function ListeningHistoryPage() {
               type="button"
               className="sync-button"
               onClick={handleSync}
-              disabled={isSyncing}
+              disabled={isSyncing || isLoadingMore}
             >
               {isSyncing ? 'Syncing…' : 'Sync with Last.fm'}
             </button>
@@ -223,8 +234,9 @@ function ListeningHistoryPage() {
             {hasMore && (
               <button
                 type="button"
+                className="load-more-button"
                 onClick={handleLoadMore}
-                disabled={isLoadingMore}
+                disabled={isLoadingMore || isSyncing}
               >
                 {isLoadingMore ? 'Loading…' : 'Load More'}
               </button>

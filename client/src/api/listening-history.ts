@@ -12,10 +12,15 @@ export async function getListeningHistory(
   )
 }
 
-// Syncs the user's listening history with Last.fm.
-export async function syncListeningHistory(): Promise<{ imported: number }> {
-  return apiRequest<{ imported: number }>('/api/listening-history/sync', {
-    method: 'POST',
-    auth: true,
-  })
+// Syncs a page of the user's listening history with Last.fm.
+export async function syncListeningHistory(
+  page: number = 1,
+): Promise<{ imported: number }> {
+  return apiRequest<{ imported: number }>(
+    `/api/listening-history/sync?page=${page}`,
+    {
+      method: 'POST',
+      auth: true,
+    },
+  )
 }
