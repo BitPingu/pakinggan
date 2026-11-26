@@ -131,3 +131,19 @@ def track(client, album):
         },
     )
     return response.json()
+
+
+# Authenticates the test user and returns their access token.
+@pytest.fixture
+def auth_headers(client, user):
+    response = client.post(
+        "/api/users/login",
+        json={
+            "username": "gavin",
+            "password": "securepassword123",
+        },
+    )
+
+    token = response.json()["access_token"]
+
+    return {"Authorization": f"Bearer {token}"}

@@ -11,6 +11,7 @@ from app.database import engine
 from app.routers.albums import router as albums_router
 from app.routers.artists import router as artists_router
 from app.routers.lastfm import router as lastfm_router
+from app.routers.listening_history import router as listening_history_router
 from app.routers.tracks import router as tracks_router
 from app.routers.users import router as users_router
 
@@ -54,6 +55,7 @@ app.include_router(artists_router)
 app.include_router(albums_router)
 app.include_router(tracks_router)
 app.include_router(lastfm_router)
+app.include_router(listening_history_router)
 
 
 # Returns a welcome message from the API.
