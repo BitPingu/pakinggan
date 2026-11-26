@@ -2,7 +2,11 @@ import { useEffect, useState } from 'react'
 import { History } from 'lucide-react'
 import PageHeader from '../components/PageHeader/PageHeader'
 import EmptyState from '../components/EmptyState/EmptyState'
-import { getListeningHistory } from '../api/listening-history'
+import {
+  getListeningHistory,
+  syncListeningHistory,
+} from '../api/listening-history'
+import { getLastFMStatus } from '../api/lastfm'
 import type { ListeningHistoryEntry } from '../types/listening-history'
 
 const PAGE_SIZE = 20
@@ -30,12 +34,38 @@ function formatDuration(duration: number | null) {
 
 // Displays the user's listening history.
 function ListeningHistoryPage() {
+  // Stores the user's listening history entries.
   const [history, setHistory] = useState<ListeningHistoryEntry[]>([])
+
+  // Tracks whether the initial listening history is loading.
   const [isLoading, setIsLoading] = useState(true)
+
+  // Tracks whether additional listening history is loading.
   const [isLoadingMore, setIsLoadingMore] = useState(false)
+
+  // Stores an error from fetching the initial listening history.
   const [error, setError] = useState<string | null>(null)
+
+  // Stores an error from fetching additional listening history.
   const [loadMoreError, setLoadMoreError] = useState<string | null>(null)
+
+  // Tracks whether more listening history entries are available.
   const [hasMore, setHasMore] = useState(true)
+
+  // Tracks whether the user has connected their Last.fm account.
+  const [isLastFMConnected, setIsLastFMConnected] = useState(false)
+
+  // Tracks whether listening history is currently syncing.
+  const [isSyncing, setIsSyncing] = useState(false)
+
+  // Stores the result of a successful listening-history sync.
+  const [syncMessage, setSyncMessage] = useState<string | null>(null)
+
+  // Stores an error from a failed listening-history sync.
+  const [syncError, setSyncError] = useState<string | null>(null)
+
+  // Stores an error from refreshing history after a successful sync.
+  const [refreshError, setRefreshError] = useState<string | null>(null)
 
   // Fetches the initial listening history.
   useEffect(() => {
@@ -72,13 +102,81 @@ function ListeningHistoryPage() {
     }
   }
 
+  // Syncs the user's listening history with Last.fm.
+  async function handleSync() {
+    setIsSyncing(true)
+    setSyncMessage(null)
+    setSyncError(null)
+    setRefreshError(null)
+
+    try {
+      const result = await syncListeningHistory()
+
+      setSyncMessage(
+        result.imported === 0
+          ? 'Your listening history is already up to date.'
+          : `Successfully imported ${result.imported} ${
+              result.imported === 1 ? 'track' : 'tracks'
+            }.`,
+      )
+
+      // Refreshes the listening history after syncing.
+      try {
+        const entries = await getListeningHistory(PAGE_SIZE)
+
+        setHistory(entries)
+        setHasMore(entries.length === PAGE_SIZE)
+      } catch {
+        setRefreshError(
+          'History was synced, but the displayed entries could not be refreshed.',
+        )
+      }
+    } catch {
+      setSyncError('Unable to sync listening history. Please try again.')
+    } finally {
+      setIsSyncing(false)
+    }
+  }
+
+  // Fetches the user's Last.fm connection status.
+  useEffect(() => {
+    async function fetchLastFMStatus() {
+      try {
+        const status = await getLastFMStatus()
+        setIsLastFMConnected(status.connected)
+      } catch {
+        setIsLastFMConnected(false)
+      }
+    }
+
+    fetchLastFMStatus()
+  }, [])
+
   return (
     <>
-      <PageHeader
-        eyebrow="YOUR LISTENING"
-        title="Listening History"
-        description="Look back on the music you've been listening to."
-      />
+      <div className="history-header">
+        <div className="history-header-top">
+          <PageHeader
+            eyebrow="YOUR LISTENING"
+            title="Listening History"
+            description="Look back on the music you've been listening to."
+          />
+          {isLastFMConnected && (
+            <button
+              type="button"
+              className="sync-button"
+              onClick={handleSync}
+              disabled={isSyncing}
+            >
+              {isSyncing ? 'Syncing…' : 'Sync with Last.fm'}
+            </button>
+          )}
+        </div>
+
+        {syncMessage && <p className="form-success">{syncMessage}</p>}
+        {syncError && <p className="form-error">{syncError}</p>}
+        {refreshError && <p className="form-error">{refreshError}</p>}
+      </div>
 
       <section className="library-section">
         {isLoading ? (

@@ -35,7 +35,8 @@
 .library-form button,
 .library-edit-form button,
 .edit-button,
-.delete-button {
+.delete-button,
+.sync-button {
   -webkit-user-select: none;
   user-select: none;
 }
@@ -201,6 +202,40 @@
   cursor: not-allowed;
 }
 
+/* Listening history header */
+
+.history-header-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 24px;
+}
+
+/* Listening history sync button */
+
+.sync-button {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 10px 16px;
+  border: none;
+  border-radius: 8px;
+  background: #a78bfa;
+  color: #101014;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+.sync-button:hover:not(:disabled) {
+  background: #c4b5fd;
+}
+
+.sync-button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
 /* Reduce card padding while editing an artist */
 
 .stat-card.editing {
@@ -275,5 +310,15 @@
 
   .library-form button {
     width: 100%;
+  }
+
+  .history-header-top .sync-button {
+    width: 100%;
+  }
+
+  .history-header-top {
+    align-items: flex-start;
+    flex-direction: column;
+    gap: 16px;
   }
 }
