@@ -1,12 +1,25 @@
 import { useEffect, useState } from 'react'
-import { Clock, Disc3, Music, Music2, Users } from 'lucide-react'
+import { Clock, Disc3, History, Music, Music2, Users } from 'lucide-react'
+import { Link } from 'react-router-dom'
 
 import { getNowPlaying } from '../api/lastfm'
+import { getListeningHistory } from '../api/listening-history'
+import type { ListeningHistoryEntry } from '../types/listening-history'
 import EmptyState from '../components/EmptyState/EmptyState'
 import PageHeader from '../components/PageHeader/PageHeader'
 import { useLibrary } from '../hooks/useLibrary'
 
 import type { LastFMTrack } from '../types/lastfm'
+
+// Formats a timestamp into a readable date and time.
+function formatPlayedAt(timestamp: string) {
+  return new Date(timestamp).toLocaleString(undefined, {
+    month: 'short',
+    day: 'numeric',
+    hour: 'numeric',
+    minute: '2-digit',
+  })
+}
 
 // Displays the dashboard and library statistics.
 function DashboardPage() {
@@ -17,6 +30,14 @@ function DashboardPage() {
 
   // Tracks whether the currently playing track is loading.
   const [isNowPlayingLoading, setIsNowPlayingLoading] = useState(true)
+
+  // Stores the user's five most recently played tracks.
+  const [recentHistory, setRecentHistory] = useState<ListeningHistoryEntry[]>(
+    [],
+  )
+
+  // Tracks whether the recent listening history is loading.
+  const [isRecentHistoryLoading, setIsRecentHistoryLoading] = useState(true)
 
   // Fetches the user's currently playing Last.fm track.
   useEffect(() => {
@@ -43,6 +64,22 @@ function DashboardPage() {
     const interval = setInterval(fetchNowPlaying, 15_000)
 
     return () => clearInterval(interval)
+  }, [])
+
+  // Fetches the user's five most recently played tracks.
+  useEffect(() => {
+    async function fetchRecentHistory() {
+      try {
+        const entries = await getListeningHistory(5)
+        setRecentHistory(entries)
+      } catch {
+        setRecentHistory([])
+      } finally {
+        setIsRecentHistoryLoading(false)
+      }
+    }
+
+    fetchRecentHistory()
   }, [])
 
   // Dashboard statistics displayed in the stat cards.
@@ -130,12 +167,43 @@ function DashboardPage() {
 
       {/* Recently played tracks section */}
       <section className="dashboard-section">
-        <h2>Recently Played</h2>
-        <EmptyState
-          icon={Music2}
-          title="No listening history yet"
-          description="Your recently played tracks will appear here once you start tracking your listening activity."
-        />
+        <div className="dashboard-section-header">
+          <h2>Recently Played</h2>
+
+          <Link to="/history" className="dashboard-section-link">
+            <History size={16} />
+            View History
+          </Link>
+        </div>
+
+        {isRecentHistoryLoading ? (
+          <EmptyState message="Loading listening history…" />
+        ) : recentHistory.length === 0 ? (
+          <EmptyState
+            icon={Music2}
+            title="No listening history yet"
+            description="Your recently played tracks will appear here once you start tracking your listening activity."
+          />
+        ) : (
+          <div className="history-list">
+            {recentHistory.map((entry) => (
+              <div className="history-entry" key={entry.id}>
+                <div className="history-entry-info">
+                  <h3>{entry.track.title}</h3>
+
+                  <p>
+                    {entry.track.artist.name}
+                    {entry.track.album && ` · ${entry.track.album.title}`}
+                  </p>
+                </div>
+
+                <span className="history-entry-date">
+                  {formatPlayedAt(entry.played_at)}
+                </span>
+              </div>
+            ))}
+          </div>
+        )}
       </section>
 
       {/* Top artists section */}
