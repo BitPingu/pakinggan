@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
 import { History } from 'lucide-react'
+import { useLocation } from 'react-router-dom'
 import PageHeader from '../components/PageHeader/PageHeader'
 import EmptyState from '../components/EmptyState/EmptyState'
 import {
@@ -34,6 +35,8 @@ function formatDuration(duration: number | null) {
 
 // Displays the user's listening history.
 function ListeningHistoryPage() {
+  const location = useLocation()
+
   // Stores the user's listening history entries.
   const [history, setHistory] = useState<ListeningHistoryEntry[]>([])
 
@@ -70,23 +73,61 @@ function ListeningHistoryPage() {
   // Stores an error from refreshing history after a successful sync.
   const [refreshError, setRefreshError] = useState<string | null>(null)
 
-  // Fetches the initial listening history.
+  // Syncs Last.fm and fetches the user's listening history.
   useEffect(() => {
+    let isMounted = true
+
     async function fetchHistory() {
+      setIsLoading(true)
+      setError(null)
+      setNextLastFMPage(2)
+
+      setLoadMoreError(null)
+      setSyncMessage(null)
+      setSyncError(null)
+      setRefreshError(null)
+
+      // Checks whether the user has connected their Last.fm account.
+      try {
+        const status = await getLastFMStatus()
+
+        if (isMounted) {
+          setIsLastFMConnected(status.connected)
+        }
+
+        // Imports the latest listening activity from Last.fm.
+        if (status.connected) {
+          await syncListeningHistory()
+        }
+      } catch {
+        // Continues using the listening history already stored locally.
+      }
+
+      // Fetches the latest listening history from PostgreSQL.
       try {
         const entries = await getListeningHistory(PAGE_SIZE)
 
-        setHistory(entries)
-        setHasMore(entries.length === PAGE_SIZE)
+        if (isMounted) {
+          setHistory(entries)
+          setHasMore(entries.length === PAGE_SIZE)
+        }
       } catch {
-        setError('Unable to load listening history. Please try again.')
+        if (isMounted) {
+          setError('Unable to load listening history. Please try again.')
+        }
       } finally {
-        setIsLoading(false)
+        if (isMounted) {
+          setIsLoading(false)
+        }
       }
     }
 
     fetchHistory()
-  }, [])
+
+    return () => {
+      isMounted = false
+    }
+  }, [location.key])
 
   // Fetches the next page of listening history.
   async function handleLoadMore() {
@@ -148,20 +189,6 @@ function ListeningHistoryPage() {
       setIsSyncing(false)
     }
   }
-
-  // Fetches the user's Last.fm connection status.
-  useEffect(() => {
-    async function fetchLastFMStatus() {
-      try {
-        const status = await getLastFMStatus()
-        setIsLastFMConnected(status.connected)
-      } catch {
-        setIsLastFMConnected(false)
-      }
-    }
-
-    fetchLastFMStatus()
-  }, [])
 
   return (
     <>

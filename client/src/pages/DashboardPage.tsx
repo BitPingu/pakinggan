@@ -1,9 +1,12 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { Clock, Disc3, History, Music, Music2, Users } from 'lucide-react'
-import { Link } from 'react-router-dom'
+import { Link, useLocation } from 'react-router-dom'
 
-import { getNowPlaying } from '../api/lastfm'
-import { getListeningHistory } from '../api/listening-history'
+import { getLastFMStatus, getNowPlaying } from '../api/lastfm'
+import {
+  getListeningHistory,
+  syncListeningHistory,
+} from '../api/listening-history'
 import type { ListeningHistoryEntry } from '../types/listening-history'
 import EmptyState from '../components/EmptyState/EmptyState'
 import PageHeader from '../components/PageHeader/PageHeader'
@@ -24,12 +27,24 @@ function formatPlayedAt(timestamp: string) {
 // Displays the dashboard and library statistics.
 function DashboardPage() {
   const { artists, albums, tracks, isLoading, error } = useLibrary()
+  const location = useLocation()
 
   // Stores the user's currently playing Last.fm track.
   const [nowPlaying, setNowPlaying] = useState<LastFMTrack | null>(null)
 
   // Tracks whether the currently playing track is loading.
   const [isNowPlayingLoading, setIsNowPlayingLoading] = useState(true)
+
+  // Stores the identifier of the previously detected Now Playing track.
+  const previousTrack = useRef<string | null>(null)
+
+  // Stores the pending listening history refresh timeout.
+  const historyRefreshTimeout = useRef<ReturnType<typeof setTimeout> | null>(
+    null,
+  )
+
+  // Tracks whether listening history is currently being refreshed.
+  const isRefreshingHistory = useRef(false)
 
   // Stores the user's five most recently played tracks.
   const [recentHistory, setRecentHistory] = useState<ListeningHistoryEntry[]>(
@@ -50,7 +65,51 @@ function DashboardPage() {
 
       try {
         const result = await getNowPlaying()
-        setNowPlaying(result.track)
+        const track = result.track
+
+        setNowPlaying(track)
+
+        // Identifies the currently playing track.
+        const trackIdentifier = track
+          ? `${track.artist.toLowerCase()}-${track.name.toLowerCase()}`
+          : null
+
+        // Detects when the currently playing track changes.
+        if (trackIdentifier && previousTrack.current !== trackIdentifier) {
+          const hasPreviousTrack = previousTrack.current !== null
+          previousTrack.current = trackIdentifier
+
+          // Refreshes listening history after a new track starts.
+          if (hasPreviousTrack) {
+            // Clears any previously scheduled refresh.
+            if (historyRefreshTimeout.current) {
+              clearTimeout(historyRefreshTimeout.current)
+            }
+
+            historyRefreshTimeout.current = setTimeout(async () => {
+              historyRefreshTimeout.current = null
+
+              if (isRefreshingHistory.current) return
+
+              isRefreshingHistory.current = true
+
+              try {
+                const status = await getLastFMStatus()
+
+                if (status.connected) {
+                  await syncListeningHistory()
+                }
+
+                const entries = await getListeningHistory(5)
+                setRecentHistory(entries)
+              } catch {
+                // Keeps the currently displayed listening history.
+              } finally {
+                isRefreshingHistory.current = false
+              }
+            }, 30_000)
+          }
+        }
       } catch {
         setNowPlaying(null)
       } finally {
@@ -63,24 +122,71 @@ function DashboardPage() {
 
     const interval = setInterval(fetchNowPlaying, 15_000)
 
-    return () => clearInterval(interval)
+    return () => {
+      clearInterval(interval)
+
+      if (historyRefreshTimeout.current) {
+        clearTimeout(historyRefreshTimeout.current)
+      }
+    }
   }, [])
 
-  // Fetches the user's five most recently played tracks.
+  // Syncs Last.fm and fetches the user's five most recently played tracks.
   useEffect(() => {
+    let isMounted = true
+
     async function fetchRecentHistory() {
+      setIsRecentHistoryLoading(true)
+
+      // Prevents overlapping Last.fm synchronization requests.
+      const shouldRefresh = !isRefreshingHistory.current
+
+      if (shouldRefresh) {
+        isRefreshingHistory.current = true
+      }
+
+      // Checks whether the user has connected their Last.fm account.
+      try {
+        if (shouldRefresh) {
+          const status = await getLastFMStatus()
+
+          // Imports the latest listening activity from Last.fm.
+          if (status.connected) {
+            await syncListeningHistory()
+          }
+        }
+      } catch {
+        // Continues using the listening history already stored locally.
+      }
+
+      // Fetches the latest listening history from PostgreSQL.
       try {
         const entries = await getListeningHistory(5)
-        setRecentHistory(entries)
+
+        if (isMounted) {
+          setRecentHistory(entries)
+        }
       } catch {
-        setRecentHistory([])
+        if (isMounted) {
+          setRecentHistory([])
+        }
       } finally {
-        setIsRecentHistoryLoading(false)
+        if (shouldRefresh) {
+          isRefreshingHistory.current = false
+        }
+
+        if (isMounted) {
+          setIsRecentHistoryLoading(false)
+        }
       }
     }
 
     fetchRecentHistory()
-  }, [])
+
+    return () => {
+      isMounted = false
+    }
+  }, [location.key])
 
   // Dashboard statistics displayed in the stat cards.
   const statistics = [
