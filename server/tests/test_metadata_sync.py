@@ -1,4 +1,4 @@
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 from unittest.mock import AsyncMock
 
 import pytest
@@ -8,10 +8,89 @@ from app.models.artist import Artist
 from app.models.genre import Genre
 from app.models.track import Track
 from app.services.metadata_sync import (
+    ALBUM_METADATA_REFRESH_INTERVAL,
+    ARTIST_METADATA_REFRESH_INTERVAL,
+    TRACK_METADATA_REFRESH_INTERVAL,
+    needs_metadata_sync,
     sync_album_metadata,
     sync_artist_metadata,
     sync_track_metadata,
 )
+
+
+# Requires synchronization when metadata has never been updated.
+def test_needs_metadata_sync_without_timestamp():
+    artist = Artist(name="Radiohead")
+
+    assert needs_metadata_sync(
+        artist,
+        ARTIST_METADATA_REFRESH_INTERVAL,
+    )
+
+
+# Defines the expected metadata refresh intervals.
+def test_metadata_refresh_intervals():
+    assert ARTIST_METADATA_REFRESH_INTERVAL == timedelta(days=90)
+    assert ALBUM_METADATA_REFRESH_INTERVAL == timedelta(days=180)
+    assert TRACK_METADATA_REFRESH_INTERVAL == timedelta(days=90)
+
+
+# Skips synchronization when metadata is still fresh.
+def test_needs_metadata_sync_with_fresh_timestamp():
+    artist = Artist(
+        name="Radiohead",
+        metadata_updated_at=datetime.now(timezone.utc),
+    )
+
+    assert not needs_metadata_sync(
+        artist,
+        ARTIST_METADATA_REFRESH_INTERVAL,
+    )
+
+
+# Requires synchronization when metadata reaches its refresh interval.
+def test_needs_metadata_sync_at_refresh_threshold():
+    artist = Artist(
+        name="Radiohead",
+        metadata_updated_at=(
+            datetime.now(timezone.utc) - ARTIST_METADATA_REFRESH_INTERVAL
+        ),
+    )
+
+    assert needs_metadata_sync(
+        artist,
+        ARTIST_METADATA_REFRESH_INTERVAL,
+    )
+
+
+# Requires synchronization when metadata is older than its refresh interval.
+def test_needs_metadata_sync_with_stale_timestamp():
+    artist = Artist(
+        name="Radiohead",
+        metadata_updated_at=(
+            datetime.now(timezone.utc)
+            - ARTIST_METADATA_REFRESH_INTERVAL
+            - timedelta(days=1)
+        ),
+    )
+
+    assert needs_metadata_sync(
+        artist,
+        ARTIST_METADATA_REFRESH_INTERVAL,
+    )
+
+
+# Handles timestamps without timezone information.
+def test_needs_metadata_sync_with_naive_timestamp():
+    artist = Artist(
+        name="Radiohead",
+        metadata_updated_at=(datetime.now(timezone.utc).replace(tzinfo=None)),
+    )
+
+    assert not needs_metadata_sync(
+        artist,
+        ARTIST_METADATA_REFRESH_INTERVAL,
+    )
 
 
 # Synchronizes an artist's metadata from Last.fm.

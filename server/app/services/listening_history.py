@@ -1,16 +1,65 @@
 from datetime import datetime, timezone
 
+import httpx
 from sqlalchemy.orm import Session
 
 from app.models.listening_history import ListeningHistory
 from app.schemas.lastfm import LastFMTrack
 from app.services.lastfm import make_user_lastfm_request
+from app.services.metadata_sync import (
+    ALBUM_METADATA_REFRESH_INTERVAL,
+    ARTIST_METADATA_REFRESH_INTERVAL,
+    TRACK_METADATA_REFRESH_INTERVAL,
+    needs_metadata_sync,
+    sync_album_metadata,
+    sync_artist_metadata,
+    sync_track_metadata,
+)
 from app.services.music_metadata import resolve_track_metadata
 
 
 # Converts a Last.fm Unix timestamp into a timezone-aware datetime.
 def parse_lastfm_timestamp(timestamp: str) -> datetime:
     return datetime.fromtimestamp(int(timestamp), tz=timezone.utc)
+
+
+# Synchronizes missing or stale metadata for a track and its related entities.
+async def sync_track_metadata_if_needed(
+    artist,
+    album,
+    track,
+    db: Session,
+) -> None:
+    if artist and needs_metadata_sync(
+        artist,
+        ARTIST_METADATA_REFRESH_INTERVAL,
+    ):
+        try:
+            await sync_artist_metadata(artist, db)
+        except (httpx.HTTPError, ValueError):
+            pass
+
+    if album and needs_metadata_sync(
+        album,
+        ALBUM_METADATA_REFRESH_INTERVAL,
+    ):
+        try:
+            await sync_album_metadata(album, db)
+        except (httpx.HTTPError, ValueError):
+            pass
+
+    if (
+        artist
+        and track
+        and needs_metadata_sync(
+            track,
+            TRACK_METADATA_REFRESH_INTERVAL,
+        )
+    ):
+        try:
+            await sync_track_metadata(track, db)
+        except (httpx.HTTPError, ValueError):
+            pass
 
 
 # Imports recent listening history from Last.fm.
@@ -105,7 +154,7 @@ async def sync_listening_history(
         )
 
         # Resolves the track metadata to existing or newly created records.
-        _, _, track = resolve_track_metadata(metadata, db)
+        artist, album, track = resolve_track_metadata(metadata, db)
 
         # Converts the Last.fm timestamp into a timezone-aware datetime.
         played_at = parse_lastfm_timestamp(metadata.uts)
@@ -123,6 +172,9 @@ async def sync_listening_history(
 
         if existing_history:
             continue
+
+        # Synchronizes missing or stale music metadata.
+        await sync_track_metadata_if_needed(artist, album, track, db)
 
         # Creates a listening-history entry for the played track.
         history = ListeningHistory(

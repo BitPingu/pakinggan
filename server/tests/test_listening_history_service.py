@@ -8,6 +8,7 @@ from app.models.track import Track
 from app.services.listening_history import (
     parse_lastfm_timestamp,
     sync_listening_history,
+    sync_track_metadata_if_needed,
 )
 
 
@@ -597,3 +598,198 @@ async def test_sync_listening_history_skips_malformed_nested_data(
 
     mock_resolve.assert_not_called()
     assert result == 0
+
+
+# Synchronizes missing or stale metadata for all related entities.
+async def test_sync_track_metadata_if_needed(db_session, artist, album, track):
+    with (
+        patch(
+            "app.services.listening_history.needs_metadata_sync",
+            return_value=True,
+        ),
+        patch(
+            "app.services.listening_history.sync_artist_metadata",
+            new_callable=AsyncMock,
+        ) as mock_artist,
+        patch(
+            "app.services.listening_history.sync_album_metadata",
+            new_callable=AsyncMock,
+        ) as mock_album,
+        patch(
+            "app.services.listening_history.sync_track_metadata",
+            new_callable=AsyncMock,
+        ) as mock_track,
+    ):
+        await sync_track_metadata_if_needed(
+            artist,
+            album,
+            track,
+            db_session,
+        )
+
+    mock_artist.assert_awaited_once_with(artist, db_session)
+    mock_album.assert_awaited_once_with(album, db_session)
+    mock_track.assert_awaited_once_with(track, db_session)
+
+
+# Skips synchronization when all related metadata is fresh.
+async def test_sync_track_metadata_if_needed_skips_fresh_metadata(
+    db_session, artist, album, track
+):
+    with (
+        patch(
+            "app.services.listening_history.needs_metadata_sync",
+            return_value=False,
+        ),
+        patch(
+            "app.services.listening_history.sync_artist_metadata",
+            new_callable=AsyncMock,
+        ) as mock_artist,
+        patch(
+            "app.services.listening_history.sync_album_metadata",
+            new_callable=AsyncMock,
+        ) as mock_album,
+        patch(
+            "app.services.listening_history.sync_track_metadata",
+            new_callable=AsyncMock,
+        ) as mock_track,
+    ):
+        await sync_track_metadata_if_needed(
+            artist,
+            album,
+            track,
+            db_session,
+        )
+
+    mock_artist.assert_not_awaited()
+    mock_album.assert_not_awaited()
+    mock_track.assert_not_awaited()
+
+
+# Continues synchronization when a metadata API request fails.
+async def test_sync_track_metadata_if_needed_handles_api_errors(
+    db_session, artist, album, track
+):
+    with (
+        patch(
+            "app.services.listening_history.needs_metadata_sync",
+            return_value=True,
+        ),
+        patch(
+            "app.services.listening_history.sync_artist_metadata",
+            new_callable=AsyncMock,
+            side_effect=ValueError("Last.fm API error"),
+        ) as mock_artist,
+        patch(
+            "app.services.listening_history.sync_album_metadata",
+            new_callable=AsyncMock,
+        ) as mock_album,
+        patch(
+            "app.services.listening_history.sync_track_metadata",
+            new_callable=AsyncMock,
+        ) as mock_track,
+    ):
+        await sync_track_metadata_if_needed(
+            artist,
+            album,
+            track,
+            db_session,
+        )
+
+    mock_artist.assert_awaited_once_with(artist, db_session)
+    mock_album.assert_awaited_once_with(album, db_session)
+    mock_track.assert_awaited_once_with(track, db_session)
+
+
+# Synchronizes artist and track metadata when an album is unavailable.
+async def test_sync_track_metadata_if_needed_without_album(db_session, artist, track):
+    with (
+        patch(
+            "app.services.listening_history.needs_metadata_sync",
+            return_value=True,
+        ),
+        patch(
+            "app.services.listening_history.sync_artist_metadata",
+            new_callable=AsyncMock,
+        ) as mock_artist,
+        patch(
+            "app.services.listening_history.sync_album_metadata",
+            new_callable=AsyncMock,
+        ) as mock_album,
+        patch(
+            "app.services.listening_history.sync_track_metadata",
+            new_callable=AsyncMock,
+        ) as mock_track,
+    ):
+        await sync_track_metadata_if_needed(
+            artist,
+            None,
+            track,
+            db_session,
+        )
+
+    mock_artist.assert_awaited_once_with(artist, db_session)
+    mock_album.assert_not_awaited()
+    mock_track.assert_awaited_once_with(track, db_session)
+
+
+# Imports listening history even when metadata synchronization fails.
+async def test_sync_listening_history_imports_track_when_metadata_sync_fails(
+    db_session, user, artist, album, track
+):
+    lastfm_response = {
+        "recenttracks": {
+            "track": [
+                {
+                    "name": "Test Track",
+                    "artist": {"#text": "Test Artist"},
+                    "album": {"#text": "Test Album"},
+                    "date": {"uts": "1795622400"},
+                }
+            ]
+        }
+    }
+
+    with (
+        patch(
+            "app.services.listening_history.make_user_lastfm_request",
+            new_callable=AsyncMock,
+            return_value=lastfm_response,
+        ),
+        patch(
+            "app.services.listening_history.resolve_track_metadata",
+            return_value=(
+                artist,
+                album,
+                db_session.get(Track, track["id"]),
+            ),
+        ),
+        patch(
+            "app.services.listening_history.needs_metadata_sync",
+            return_value=True,
+        ),
+        patch(
+            "app.services.listening_history.sync_artist_metadata",
+            new_callable=AsyncMock,
+            side_effect=ValueError("Last.fm API error"),
+        ),
+        patch(
+            "app.services.listening_history.sync_album_metadata",
+            new_callable=AsyncMock,
+        ),
+        patch(
+            "app.services.listening_history.sync_track_metadata",
+            new_callable=AsyncMock,
+        ),
+    ):
+        result = await sync_listening_history(db_session, user["id"])
+
+    history = (
+        db_session.query(ListeningHistory)
+        .filter(ListeningHistory.user_id == user["id"])
+        .all()
+    )
+
+    assert result == 1
+    assert len(history) == 1
+    assert history[0].track_id == track["id"]

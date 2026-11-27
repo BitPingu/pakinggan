@@ -1,4 +1,4 @@
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 
 import httpx
 from sqlalchemy.orm import Session
@@ -18,6 +18,28 @@ from app.services.lastfm_metadata import (
     parse_track_metadata,
 )
 from app.services.music_metadata import update_entity_genres
+
+# Defines how frequently music metadata should be refreshed.
+ARTIST_METADATA_REFRESH_INTERVAL = timedelta(days=90)
+ALBUM_METADATA_REFRESH_INTERVAL = timedelta(days=180)
+TRACK_METADATA_REFRESH_INTERVAL = timedelta(days=90)
+
+
+# Checks whether an entity's metadata needs synchronization.
+def needs_metadata_sync(
+    entity,
+    refresh_interval: timedelta,
+) -> bool:
+    if entity.metadata_updated_at is None:
+        return True
+
+    updated_at = entity.metadata_updated_at
+
+    # Treats timestamps without timezone information as UTC.
+    if updated_at.tzinfo is None:
+        updated_at = updated_at.replace(tzinfo=timezone.utc)
+
+    return datetime.now(timezone.utc) - updated_at >= refresh_interval
 
 
 # Synchronizes an artist's metadata using Last.fm.
