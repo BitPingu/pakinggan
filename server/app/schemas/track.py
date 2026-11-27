@@ -46,6 +46,16 @@ class TrackResponse(BaseModel):
     duration: int | None
     artist_id: int
     album_id: int | None
+    description: str | None = None
+    genres: list[str] = Field(default_factory=list)
+
+    # Converts Genre model objects into genre names.
+    @field_validator("genres", mode="before")
+    @classmethod
+    def serialize_genres(cls, value) -> list[str]:
+        return [
+            genre.name if hasattr(genre, "name") else genre for genre in (value or [])
+        ]
 
     # Allows the schema to read data from ORM model attributes.
     model_config = ConfigDict(from_attributes=True)

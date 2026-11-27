@@ -82,7 +82,7 @@
 
 .listening-track {
   display: grid;
-  grid-template-columns: minmax(240px, 360px) minmax(0, 1fr);
+  grid-template-columns: minmax(240px, 300px) minmax(0, 1fr);
   align-items: center;
   gap: 56px;
 }
@@ -166,7 +166,7 @@
 .listening-album {
   margin: 0;
   color: #9696a2;
-  font-size: 14px;
+  font-size: 16px;
 }
 
 /* Track transition */
@@ -220,7 +220,7 @@
   }
 
   .listening-artwork-container {
-    max-width: 300px;
+    max-width: 240px;
   }
 
   .listening-track-info {
@@ -237,7 +237,7 @@
   }
 
   .listening-album {
-    font-size: 13px;
+    font-size: 14px;
   }
 
   .now-playing-section {

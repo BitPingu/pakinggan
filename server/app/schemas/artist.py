@@ -37,6 +37,17 @@ class ArtistUpdate(BaseModel):
 class ArtistResponse(BaseModel):
     id: int
     name: str
+    biography: str | None = None
+    image_url: str | None = None
+    genres: list[str] = Field(default_factory=list)
+
+    # Converts Genre model objects into genre names.
+    @field_validator("genres", mode="before")
+    @classmethod
+    def serialize_genres(cls, value) -> list[str]:
+        return [
+            genre.name if hasattr(genre, "name") else genre for genre in (value or [])
+        ]
 
     # Allows the schema to read data from ORM model attributes.
     model_config = ConfigDict(from_attributes=True)
