@@ -232,7 +232,14 @@ function DashboardPage() {
 
       {/* Currently playing track */}
       <section className="dashboard-section">
-        <h2>Now Playing</h2>
+        <div className="dashboard-section-header">
+          <h2>Now Playing</h2>
+
+          <Link to="/now-playing" className="dashboard-section-link">
+            <Music size={16} />
+            Explore Track
+          </Link>
+        </div>
 
         {isNowPlayingLoading ? (
           <EmptyState message="Checking what you're listening to…" />

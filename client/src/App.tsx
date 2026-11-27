@@ -13,6 +13,7 @@ import ForgotPasswordPage from './pages/ForgotPasswordPage'
 import ResetPasswordPage from './pages/ResetPasswordPage'
 import SettingsPage from './pages/SettingsPage'
 import ListeningHistoryPage from './pages/ListeningHistoryPage'
+import NowPlayingPage from './pages/NowPlayingPage'
 import './App.css'
 
 // Protects application pages from unauthenticated access.
@@ -68,6 +69,7 @@ function App() {
         <Route path="/tracks" element={<TracksPage />} />
         <Route path="/settings" element={<SettingsPage />} />
         <Route path="/history" element={<ListeningHistoryPage />} />
+        <Route path="/now-playing" element={<NowPlayingPage />} />
       </Route>
 
       {/* Redirect unknown URLs */}

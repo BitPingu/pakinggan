@@ -4,6 +4,7 @@ import {
   History,
   LayoutDashboard,
   LogOut,
+  Music,
   Music2,
   Settings,
   Users,
@@ -33,7 +34,10 @@ const navigationSections = [
   },
   {
     heading: 'LISTENING',
-    items: [{ label: 'Listening History', icon: History, path: '/history' }],
+    items: [
+      { label: 'Now Playing', icon: Music, path: '/now-playing' },
+      { label: 'Listening History', icon: History, path: '/history' },
+    ],
   },
 ]
 
