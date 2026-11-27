@@ -1,12 +1,17 @@
+import pytest
+
 from app.models.album import Album
 from app.models.artist import Artist
+from app.models.genre import Genre
 from app.models.track import Track
 from app.schemas.lastfm import LastFMTrack
 from app.services.music_metadata import (
     get_or_create_album,
     get_or_create_artist,
+    get_or_create_genre,
     get_or_create_track,
     resolve_track_metadata,
+    update_entity_genres,
 )
 
 
@@ -236,6 +241,144 @@ def test_get_or_create_track_preserves_existing_duration(db_session, track):
 
     assert existing_track.id == track["id"]
     assert existing_track.duration == 383
+
+
+# Creates a genre when one does not exist.
+def test_get_or_create_genre_creates_genre(db_session):
+    genre = get_or_create_genre("Alternative Rock", db_session)
+
+    assert genre.id is not None
+    assert genre.name == "Alternative Rock"
+
+    assert db_session.query(Genre).count() == 1
+
+
+# Returns an existing genre instead of creating a duplicate.
+def test_get_or_create_genre_returns_existing_genre(db_session):
+    existing_genre = Genre(name="Alternative Rock")
+    db_session.add(existing_genre)
+    db_session.flush()
+
+    genre = get_or_create_genre("Alternative Rock", db_session)
+
+    assert genre.id == existing_genre.id
+    assert db_session.query(Genre).count() == 1
+
+
+# Matches genre names without considering capitalization.
+def test_get_or_create_genre_case_insensitive(db_session):
+    existing_genre = Genre(name="Alternative Rock")
+    db_session.add(existing_genre)
+    db_session.flush()
+
+    genre = get_or_create_genre("alternative rock", db_session)
+
+    assert genre.id == existing_genre.id
+    assert genre.name == "Alternative Rock"
+    assert db_session.query(Genre).count() == 1
+
+
+# Removes surrounding whitespace from new genre names.
+def test_get_or_create_genre_strips_whitespace(db_session):
+    genre = get_or_create_genre("  Alternative Rock  ", db_session)
+
+    assert genre.name == "Alternative Rock"
+
+
+# Tests that genres are created and associated with an artist.
+def test_update_entity_genres_creates_and_associates_genres(db_session):
+    artist = Artist(name="Radiohead")
+    db_session.add(artist)
+    db_session.flush()
+
+    update_entity_genres(artist, ["Alternative Rock", "Art Rock"], db_session)
+
+    assert [genre.name for genre in artist.genres] == [
+        "Alternative Rock",
+        "Art Rock",
+    ]
+    assert db_session.query(Genre).count() == 2
+
+
+# Replaces an artist's existing genre associations.
+def test_update_entity_genres_replaces_existing_genres(db_session):
+    artist = Artist(name="Radiohead")
+    artist.genres = [get_or_create_genre("Rock", db_session)]
+    db_session.add(artist)
+    db_session.flush()
+
+    update_entity_genres(artist, ["Alternative Rock", "Art Rock"], db_session)
+
+    assert {genre.name for genre in artist.genres} == {
+        "Alternative Rock",
+        "Art Rock",
+    }
+    assert db_session.query(Genre).count() == 3
+
+
+# Preserves existing genres when the provided names are empty or whitespace.
+@pytest.mark.parametrize("genre_names", [[], ["  ", ""]])
+def test_update_entity_genres_preserves_existing_genres(db_session, genre_names):
+    artist = Artist(name="Radiohead")
+    artist.genres = [get_or_create_genre("Rock", db_session)]
+    db_session.add(artist)
+    db_session.flush()
+
+    update_entity_genres(artist, genre_names, db_session)
+
+    assert [genre.name for genre in artist.genres] == ["Rock"]
+    assert db_session.query(Genre).count() == 1
+
+
+# Associates genres with an album.
+def test_update_entity_genres_with_album(db_session, album):
+    existing_album = db_session.get(Album, album["id"])
+
+    update_entity_genres(
+        existing_album,
+        ["Alternative Rock", "Art Rock"],
+        db_session,
+    )
+
+    assert {genre.name for genre in existing_album.genres} == {
+        "Alternative Rock",
+        "Art Rock",
+    }
+
+
+# Associates genres with a track.
+def test_update_entity_genres_with_track(db_session, track):
+    existing_track = db_session.get(Track, track["id"])
+
+    update_entity_genres(
+        existing_track,
+        ["Alternative Rock", "Art Rock"],
+        db_session,
+    )
+
+    assert {genre.name for genre in existing_track.genres} == {
+        "Alternative Rock",
+        "Art Rock",
+    }
+
+
+# Removes duplicate genre names without considering capitalization.
+def test_update_entity_genres_deduplicates_names(db_session):
+    artist = Artist(name="Radiohead")
+    db_session.add(artist)
+    db_session.flush()
+
+    update_entity_genres(
+        artist,
+        ["Rock", "rock", " Alternative Rock ", "ROCK"],
+        db_session,
+    )
+
+    assert [genre.name for genre in artist.genres] == [
+        "Rock",
+        "Alternative Rock",
+    ]
+    assert db_session.query(Genre).count() == 2
 
 
 # Resolves metadata and creates all associated records.

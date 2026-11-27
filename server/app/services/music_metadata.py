@@ -3,6 +3,7 @@ from sqlalchemy.orm import Session
 
 from app.models.album import Album
 from app.models.artist import Artist
+from app.models.genre import Genre
 from app.models.track import Track
 from app.schemas.lastfm import LastFMTrack
 
@@ -77,6 +78,51 @@ def get_or_create_track(
     db.flush()
 
     return track
+
+
+# Finds an existing genre or creates a new one.
+def get_or_create_genre(name: str, db: Session) -> Genre:
+    # Searches for an existing genre without considering capitalization.
+    genre = (
+        db.query(Genre).filter(func.lower(Genre.name) == name.strip().lower()).first()
+    )
+
+    # Returns the existing genre if one is found.
+    if genre:
+        return genre
+
+    # Creates a new genre if one does not exist.
+    genre = Genre(name=name.strip())
+    db.add(genre)
+    db.flush()
+
+    return genre
+
+
+# Associates an entity with its genres.
+def update_entity_genres(
+    entity: Artist | Album | Track,
+    genre_names: list[str],
+    db: Session,
+) -> None:
+    # Removes whitespace and duplicate genre names, ignoring capitalization.
+    normalized_names = []
+    seen_names = set()
+
+    for name in genre_names:
+        name = name.strip()
+        normalized_name = name.casefold()
+
+        if name and normalized_name not in seen_names:
+            normalized_names.append(name)
+            seen_names.add(normalized_name)
+
+    # Preserves existing genres when no valid genres are provided.
+    if not normalized_names:
+        return
+
+    # Finds or creates each genre and associates it with the entity.
+    entity.genres = [get_or_create_genre(name, db) for name in normalized_names]
 
 
 # Resolves Last.fm track metadata to database records.
