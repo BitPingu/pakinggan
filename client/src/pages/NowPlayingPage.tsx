@@ -54,7 +54,16 @@ function NowPlayingPage() {
   }, [])
 
   return (
-    <>
+    <div className="now-playing-page">
+      {/* Ambient visualizer background */}
+      {nowPlaying && (
+        <div className="ambient-background" aria-hidden="true">
+          <div className="visualizer-orb visualizer-orb-one" />
+          <div className="visualizer-orb visualizer-orb-two" />
+          <div className="visualizer-orb visualizer-orb-three" />
+        </div>
+      )}
+
       {/* Now Playing page heading */}
       <PageHeader
         eyebrow="YOUR MUSIC"
@@ -203,7 +212,7 @@ function NowPlayingPage() {
           </div>
         </section>
       )}
-    </>
+    </div>
   )
 }
 
