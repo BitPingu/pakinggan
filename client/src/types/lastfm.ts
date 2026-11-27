@@ -24,3 +24,12 @@ export interface LastFMRecentTracks {
 export interface LastFMNowPlaying {
   track: LastFMTrack | null
 }
+
+// Represents supplementary information about a track.
+export interface TrackMetadata {
+  genres: string[]
+  releaseDate: string | null
+  duration: number | null
+  description: string | null
+  sourceUrl: string | null
+}

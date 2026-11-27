@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { getNowPlaying } from '../api/lastfm'
 import type { LastFMTrack } from '../types/lastfm'
+import { mockTrackMetadata } from '../data/mockTrackMetadata'
 import PageHeader from '../components/PageHeader/PageHeader'
 import '../styles/now-playing.css'
 
@@ -9,6 +10,7 @@ function NowPlayingPage() {
   const [nowPlaying, setNowPlaying] = useState<LastFMTrack | null>(null)
   const [isLoading, setIsLoading] = useState(true)
   const [hasError, setHasError] = useState(false)
+  const trackKey = nowPlaying ? `${nowPlaying.artist}-${nowPlaying.name}` : ''
 
   // Fetches the currently playing track from Last.fm.
   useEffect(() => {
@@ -64,8 +66,16 @@ function NowPlayingPage() {
         {isLoading ? (
           <p>Loading current track...</p>
         ) : nowPlaying ? (
-          <div className="listening-track">
+          <div className="listening-track" key={trackKey}>
             <div className="listening-artwork-container">
+              {nowPlaying.image && (
+                <img
+                  src={nowPlaying.image}
+                  alt=""
+                  aria-hidden="true"
+                  className="listening-artwork-glow"
+                />
+              )}
               {nowPlaying.image ? (
                 <img
                   src={nowPlaying.image}
@@ -115,6 +125,51 @@ function NowPlayingPage() {
       {nowPlaying && (
         <section className="now-playing-section">
           <h2>About This Track</h2>
+
+          <div className="track-metadata">
+            <div className="metadata-item">
+              <span className="metadata-label">Genres</span>
+              <div className="metadata-genres">
+                {mockTrackMetadata.genres.map((genre) => (
+                  <span className="metadata-genre" key={genre}>
+                    {genre}
+                  </span>
+                ))}
+              </div>
+            </div>
+
+            <div className="metadata-item">
+              <span className="metadata-label">Release Date</span>
+              <span className="metadata-value">
+                {mockTrackMetadata.releaseDate
+                  ? new Date(
+                      `${mockTrackMetadata.releaseDate}T00:00:00`,
+                    ).toLocaleDateString('en-CA', {
+                      year: 'numeric',
+                      month: 'long',
+                      day: 'numeric',
+                    })
+                  : 'Unknown'}
+              </span>
+            </div>
+
+            <div className="metadata-item">
+              <span className="metadata-label">Duration</span>
+              <span className="metadata-value">
+                {mockTrackMetadata.duration !== null
+                  ? `${Math.floor(mockTrackMetadata.duration / 60)}:${String(
+                      mockTrackMetadata.duration % 60,
+                    ).padStart(2, '0')}`
+                  : 'Unknown'}
+              </span>
+            </div>
+          </div>
+          <div className="track-about">
+            <h3>About</h3>
+            <p>
+              {mockTrackMetadata.description ?? 'No description available.'}
+            </p>
+          </div>
         </section>
       )}
     </>
