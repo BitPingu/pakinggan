@@ -8,8 +8,8 @@ from app.models.track import Track
 from app.services.listening_history import (
     parse_lastfm_timestamp,
     sync_listening_history,
-    sync_track_metadata_if_needed,
 )
+from app.services.metadata_sync import sync_track_metadata_if_needed
 
 
 # Converts a Last.fm Unix timestamp into a UTC datetime.
@@ -604,19 +604,19 @@ async def test_sync_listening_history_skips_malformed_nested_data(
 async def test_sync_track_metadata_if_needed(db_session, artist, album, track):
     with (
         patch(
-            "app.services.listening_history.needs_metadata_sync",
+            "app.services.metadata_sync.needs_metadata_sync",
             return_value=True,
         ),
         patch(
-            "app.services.listening_history.sync_artist_metadata",
+            "app.services.metadata_sync.sync_artist_metadata",
             new_callable=AsyncMock,
         ) as mock_artist,
         patch(
-            "app.services.listening_history.sync_album_metadata",
+            "app.services.metadata_sync.sync_album_metadata",
             new_callable=AsyncMock,
         ) as mock_album,
         patch(
-            "app.services.listening_history.sync_track_metadata",
+            "app.services.metadata_sync.sync_track_metadata",
             new_callable=AsyncMock,
         ) as mock_track,
     ):
@@ -638,19 +638,19 @@ async def test_sync_track_metadata_if_needed_skips_fresh_metadata(
 ):
     with (
         patch(
-            "app.services.listening_history.needs_metadata_sync",
+            "app.services.metadata_sync.needs_metadata_sync",
             return_value=False,
         ),
         patch(
-            "app.services.listening_history.sync_artist_metadata",
+            "app.services.metadata_sync.sync_artist_metadata",
             new_callable=AsyncMock,
         ) as mock_artist,
         patch(
-            "app.services.listening_history.sync_album_metadata",
+            "app.services.metadata_sync.sync_album_metadata",
             new_callable=AsyncMock,
         ) as mock_album,
         patch(
-            "app.services.listening_history.sync_track_metadata",
+            "app.services.metadata_sync.sync_track_metadata",
             new_callable=AsyncMock,
         ) as mock_track,
     ):
@@ -672,20 +672,20 @@ async def test_sync_track_metadata_if_needed_handles_api_errors(
 ):
     with (
         patch(
-            "app.services.listening_history.needs_metadata_sync",
+            "app.services.metadata_sync.needs_metadata_sync",
             return_value=True,
         ),
         patch(
-            "app.services.listening_history.sync_artist_metadata",
+            "app.services.metadata_sync.sync_artist_metadata",
             new_callable=AsyncMock,
             side_effect=ValueError("Last.fm API error"),
         ) as mock_artist,
         patch(
-            "app.services.listening_history.sync_album_metadata",
+            "app.services.metadata_sync.sync_album_metadata",
             new_callable=AsyncMock,
         ) as mock_album,
         patch(
-            "app.services.listening_history.sync_track_metadata",
+            "app.services.metadata_sync.sync_track_metadata",
             new_callable=AsyncMock,
         ) as mock_track,
     ):
@@ -705,19 +705,19 @@ async def test_sync_track_metadata_if_needed_handles_api_errors(
 async def test_sync_track_metadata_if_needed_without_album(db_session, artist, track):
     with (
         patch(
-            "app.services.listening_history.needs_metadata_sync",
+            "app.services.metadata_sync.needs_metadata_sync",
             return_value=True,
         ),
         patch(
-            "app.services.listening_history.sync_artist_metadata",
+            "app.services.metadata_sync.sync_artist_metadata",
             new_callable=AsyncMock,
         ) as mock_artist,
         patch(
-            "app.services.listening_history.sync_album_metadata",
+            "app.services.metadata_sync.sync_album_metadata",
             new_callable=AsyncMock,
         ) as mock_album,
         patch(
-            "app.services.listening_history.sync_track_metadata",
+            "app.services.metadata_sync.sync_track_metadata",
             new_callable=AsyncMock,
         ) as mock_track,
     ):
@@ -765,20 +765,20 @@ async def test_sync_listening_history_imports_track_when_metadata_sync_fails(
             ),
         ),
         patch(
-            "app.services.listening_history.needs_metadata_sync",
+            "app.services.metadata_sync.needs_metadata_sync",
             return_value=True,
         ),
         patch(
-            "app.services.listening_history.sync_artist_metadata",
+            "app.services.metadata_sync.sync_artist_metadata",
             new_callable=AsyncMock,
             side_effect=ValueError("Last.fm API error"),
         ),
         patch(
-            "app.services.listening_history.sync_album_metadata",
+            "app.services.metadata_sync.sync_album_metadata",
             new_callable=AsyncMock,
         ),
         patch(
-            "app.services.listening_history.sync_track_metadata",
+            "app.services.metadata_sync.sync_track_metadata",
             new_callable=AsyncMock,
         ),
     ):

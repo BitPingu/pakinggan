@@ -133,3 +133,29 @@ async def sync_track_metadata(
     db.flush()
 
     return track
+
+
+# Synchronizes missing or stale metadata for a track and its related entities.
+async def sync_track_metadata_if_needed(
+    artist: Artist | None,
+    album: Album | None,
+    track: Track | None,
+    db: Session,
+) -> None:
+    if artist and needs_metadata_sync(artist, ARTIST_METADATA_REFRESH_INTERVAL):
+        try:
+            await sync_artist_metadata(artist, db)
+        except (httpx.HTTPError, ValueError):
+            pass
+
+    if album and needs_metadata_sync(album, ALBUM_METADATA_REFRESH_INTERVAL):
+        try:
+            await sync_album_metadata(album, db)
+        except (httpx.HTTPError, ValueError):
+            pass
+
+    if artist and track and needs_metadata_sync(track, TRACK_METADATA_REFRESH_INTERVAL):
+        try:
+            await sync_track_metadata(track, db)
+        except (httpx.HTTPError, ValueError):
+            pass

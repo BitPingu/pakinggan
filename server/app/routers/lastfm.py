@@ -215,7 +215,11 @@ async def get_recent_tracks(
 
 
 # Returns the authenticated user's currently playing Last.fm track.
-@router.get("/now-playing", response_model=LastFMNowPlaying)
+@router.get(
+    "/now-playing",
+    response_model=LastFMNowPlaying,
+    response_model_exclude_unset=True,
+)
 async def get_now_playing(
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db),
@@ -272,6 +276,7 @@ async def get_now_playing(
             "album": (album or {}).get("#text"),
             "url": track.get("url"),
             "image": images[-1].get("#text") if images else None,
+            "played_at": None,
             "nowplaying": True,
         }
     )

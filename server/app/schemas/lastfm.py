@@ -1,5 +1,9 @@
 from pydantic import BaseModel, Field
 
+from app.schemas.album import AlbumResponse
+from app.schemas.artist import ArtistResponse
+from app.schemas.track import TrackResponse
+
 
 # Represents the user's Last.fm connection status.
 class LastFMStatus(BaseModel):
@@ -24,6 +28,14 @@ class LastFMRecentTracks(BaseModel):
     tracks: list[LastFMTrack]
 
 
+# Represents the music metadata associated with the currently playing track.
+class NowPlayingMetadata(BaseModel):
+    artist: ArtistResponse
+    album: AlbumResponse | None = None
+    track: TrackResponse
+
+
 # Represents the user's currently playing Last.fm track.
 class LastFMNowPlaying(BaseModel):
     track: LastFMTrack | None = None
+    metadata: NowPlayingMetadata | None = None
