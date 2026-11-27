@@ -33,3 +33,11 @@ export interface TrackMetadata {
   description: string | null
   sourceUrl: string | null
 }
+
+// Represents supplementary information about an artist.
+export interface ArtistMetadata {
+  image: string | null
+  biography: string | null
+  genres: string[]
+  sourceUrl: string | null
+}

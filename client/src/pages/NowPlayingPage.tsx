@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import { getNowPlaying } from '../api/lastfm'
 import type { LastFMTrack } from '../types/lastfm'
 import { mockTrackMetadata } from '../data/mockTrackMetadata'
+import { mockArtistMetadata } from '../data/mockArtistMetadata'
 import PageHeader from '../components/PageHeader/PageHeader'
 import '../styles/now-playing.css'
 
@@ -169,6 +170,36 @@ function NowPlayingPage() {
             <p>
               {mockTrackMetadata.description ?? 'No description available.'}
             </p>
+          </div>
+          <div className="artist-section">
+            <h2>About the Artist</h2>
+
+            <div className="artist-card">
+              {mockArtistMetadata.image && (
+                <img
+                  src={mockArtistMetadata.image}
+                  alt={`${nowPlaying.artist} portrait`}
+                  className="artist-image"
+                />
+              )}
+
+              <div className="artist-info">
+                <h3>{nowPlaying.artist}</h3>
+
+                <p>
+                  {mockArtistMetadata.biography ??
+                    'No artist biography available.'}
+                </p>
+
+                <div className="artist-genres">
+                  {mockArtistMetadata.genres.map((genre) => (
+                    <span className="metadata-genre" key={genre}>
+                      {genre}
+                    </span>
+                  ))}
+                </div>
+              </div>
+            </div>
           </div>
         </section>
       )}
